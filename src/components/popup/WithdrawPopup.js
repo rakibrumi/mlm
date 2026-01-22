@@ -2,7 +2,7 @@ import React from 'react'
 import ClearIcon from '@mui/icons-material/Clear'
 import { Button, TextField, Typography } from '@mui/material'
 import { ButtonAnimate } from '../animate'
-import { sendMoney, withdrawMoney } from '@/func/functions'
+import { sendMoney, withdrawMoney, getUserByReference } from '@/func/functions'
 import toast from 'react-hot-toast'
 
 const WithdrawPopup = ({ setOpen }) => {
@@ -21,25 +21,36 @@ const WithdrawPopup = ({ setOpen }) => {
     if (!parsedUser) {
       return toast.error('You need to login first')
     }
-    if (parsedUser.balance < input.amount) {
-      return toast.error('You do not have enough balance')
+
+    // Fetch fresh user data to get accurate balance
+    const dbUser = await getUserByReference(parsedUser.myReference)
+    if (!dbUser) {
+      return toast.error('User data not found')
     }
-    if (input.amount < 0) {
+
+    const amount = Number(input.amount)
+    const balance = Number(dbUser.balance)
+    const maxWithdraw = Math.floor(balance / 1.05)
+
+    if (amount > maxWithdraw) {
+      return toast.error(`You can withdraw max ${maxWithdraw} amount`)
+    }
+    if (amount < 0) {
       return toast.error('You cannot withdraw negative amount')
     }
-    if (input.amount < 500) {
+    if (amount < 500) {
       return toast.error('You cannot withdraw less than 500')
     }
-    if (!input.amount) {
+    if (!amount) {
       return toast.error('Please input amount')
     }
 
-    const send = await withdrawMoney(parsedUser.myReference, input.amount)
+    const send = await withdrawMoney(parsedUser.myReference, amount)
     if (send) {
       toast.success('Money Withdraw successfully')
       window.location.reload()
     } else {
-      toast.error('Something went wrong')
+      toast.error('Transaction Failed. Check console for details or try again.')
     }
   }
 

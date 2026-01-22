@@ -24,23 +24,24 @@ const SendMoneyPopup = ({ setOpen }) => {
     if (parsedUser.myReference === input.sendTo) {
       return toast.error('You cannot send money to yourself')
     }
-    if (parsedUser.balance < input.amount) {
+    const amount = Number(input.amount)
+    if (parsedUser.balance < amount) {
       return toast.error('You do not have enough balance')
     }
-    if (input.amount < 0) {
+    if (amount < 0) {
       return toast.error('You cannot send negative amount')
     }
-    // if (input.amount < 100) {
+    // if (amount < 100) {
     //   return toast.error('You cannot send less than 100')
     // }
-    if (!input.sendTo || !input.amount) {
+    if (!input.sendTo || !amount) {
       return toast.error('Please fill all the fields')
     }
 
     const send = await sendMoney(
       parsedUser.myReference,
       input.sendTo,
-      input.amount
+      amount
     )
     if (send) {
       toast.success('Money sent successfully')
@@ -49,7 +50,7 @@ const SendMoneyPopup = ({ setOpen }) => {
       toast.error('Something went wrong')
     }
   }
-  
+
   return (
     <div className="popup_wrapper">
       <div className="popup_content relative">

@@ -276,9 +276,11 @@ export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
   }
 
   // Check if 5% of the amount is less than the user's balance
-  const serviceCharge = (7 / 100) * amount
+  // Check if 5% of the amount is less than the user's balance
+  const numAmount = Number(amount)
+  const serviceCharge = (7 / 100) * numAmount
 
-  if (userData.balance < amount + serviceCharge) {
+  if (userData.balance < numAmount + serviceCharge) {
     console.log('User does not have enough balance')
     return false
   }
@@ -323,18 +325,19 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
   const userData = userDoc.data()
   const adminData = adminDoc.data()
 
-  const serviceCharge = (5 / 100) * amount
+  const numAmount = Number(amount)
+  const serviceCharge = (5 / 100) * numAmount
 
   const userRef = doc(db, 'user', userDoc.id)
   const adminRef = doc(db, 'user', adminDoc.id)
 
-  if (userData.balance < amount + serviceCharge) {
+  if (userData.balance < numAmount + serviceCharge) {
     console.log('User does not have enough balance')
     return false
   }
 
   await updateDoc(userRef, {
-    balance: Number(userData?.balance) - Number(amount + serviceCharge),
+    balance: Number(userData?.balance) - (numAmount + serviceCharge),
   })
 
   await updateDoc(adminRef, {
