@@ -172,6 +172,41 @@ export const updateUser = async (referenceId, newUser) => {
   }
 }
 
+export const updateUserProfile = async (referenceId, newData) => {
+  try {
+    const userQuery = query(
+      collection(db, 'user'),
+      where('myReference', '==', referenceId)
+    )
+    const querySnapshot = await getDocs(userQuery)
+
+    if (querySnapshot.empty) {
+      console.log('User not found')
+      return { success: false, error: 'User not found' }
+    }
+
+    const userDoc = querySnapshot.docs[0]
+    const userRef = doc(db, 'user', userDoc.id)
+
+    // Only allow updating specific fields
+    const { name, mobileNumber, avatarUrl, dob, father_name, mother_name, presentAddress } = newData
+    const updates = {}
+    if (name) updates.name = name
+    if (mobileNumber) updates.mobileNumber = mobileNumber
+    if (avatarUrl) updates.avatarUrl = avatarUrl
+    if (dob) updates.dob = dob
+    if (father_name) updates.father_name = father_name
+    if (mother_name) updates.mother_name = mother_name
+    if (presentAddress) updates.presentAddress = presentAddress
+
+    await updateDoc(userRef, updates)
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating profile:', error)
+    return { success: false, error: error.message }
+  }
+}
+
 export const getAllUser = async setUsers => {
   const querySnapshot = await getDocs(collection(db, 'user'))
   setUsers([])

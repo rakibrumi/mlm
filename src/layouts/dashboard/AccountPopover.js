@@ -24,6 +24,7 @@ import { MIconButton } from '../../components/@material-extend'
 import { useRouter } from 'next/router'
 import SendMoneyPopup from '@/components/popup/SendMoneyPopup'
 import WithdrawPopup from '@/components/popup/WithdrawPopup'
+import UpdateProfilePopup from '@/components/popup/UpdateProfilePopup'
 import { getAllUser2 } from '@/func/functions'
 
 // ----------------------------------------------------------------------
@@ -39,6 +40,7 @@ const MENU_OPTIONS = [
 export default function AccountPopover({ user }) {
   const [sendMoneyPopup, setSendMoneyPopup] = useState(false)
   const [withdrawMoneyPopup, setWithdrawMoneyPopup] = useState(false)
+  const [updateProfilePopup, setUpdateProfilePopup] = useState(false)
   const router = useRouter()
   const anchorRef = useRef(null)
   const [copy, setCopy] = useState(false)
@@ -218,6 +220,18 @@ export default function AccountPopover({ user }) {
             Transaction History
           </Button>
           <Button
+            onClick={() => {
+              setUpdateProfilePopup(true)
+              setOpen(false)
+            }}
+            sx={{ mb: 1 }}
+            fullWidth
+            color="secondary"
+            variant="outlined"
+          >
+            Update Profile
+          </Button>
+          <Button
             onClick={handleLogOut}
             fullWidth
             color="error"
@@ -236,6 +250,14 @@ export default function AccountPopover({ user }) {
         <WithdrawPopup
           open={withdrawMoneyPopup}
           setOpen={setWithdrawMoneyPopup}
+        />
+      )}
+
+      {updateProfilePopup && (
+        <UpdateProfilePopup
+          open={updateProfilePopup}
+          setOpen={setUpdateProfilePopup}
+          currentUser={user}
         />
       )}
     </>
