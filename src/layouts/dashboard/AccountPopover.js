@@ -209,6 +209,15 @@ export default function AccountPopover({ user }) {
             Go to account
           </Button>
           <Button
+            onClick={() => router.push('/history')}
+            sx={{ mb: 1 }}
+            fullWidth
+            color="primary"
+            variant="outlined"
+          >
+            Transaction History
+          </Button>
+          <Button
             onClick={handleLogOut}
             fullWidth
             color="error"

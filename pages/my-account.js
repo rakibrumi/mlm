@@ -105,47 +105,6 @@ const MyAccount = () => {
             </ButtonAnimate>
           </Box>
 
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'flex-end',
-              gap: 1,
-              // flexDirection: 'column',
-              flexWrap: 'wrap',
-            }}
-          >
-            <ButtonAnimate>
-              <Button
-                variant="contained"
-                color="primary"
-                // sx={{ mb: 1 }}
-                onClick={() => router.push('/ad')}
-              >
-                এ্যাড দেখে ইনকাম করুন
-              </Button>
-            </ButtonAnimate>
-            <ButtonAnimate>
-              <Button
-                variant="contained"
-                color="primary"
-                // sx={{ mb: 1}}
-                onClick={() => router.push('/quiz')}
-              >
-                কুইজ খেলে ইনকাম করুন
-              </Button>
-            </ButtonAnimate>
-            <ButtonAnimate>
-              <Button
-                variant="contained"
-                color="primary"
-                // sx={{ mb: 1}}
-                onClick={() => router.push('/game')}
-              >
-                গেম খেলে ইনকাম করুন
-              </Button>
-            </ButtonAnimate>
-          </Box>
         </Container>
 
         <DynamicOrganizationalChart allDataView={allDataView} />

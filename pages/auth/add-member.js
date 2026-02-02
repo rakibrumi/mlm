@@ -22,6 +22,7 @@ import {
   handleMakeReferance,
   moneyAddRemove,
   updateUser,
+  createTransaction,
 } from '@/func/functions'
 import toast from 'react-hot-toast'
 import UploadAvatar from '@/components/@material-extend/UploadAvatar'
@@ -108,8 +109,8 @@ const AddMember = () => {
   }, [router])
 
   const handleAddMember = async () => {
-    if (currentUser?.balance < 4600) {
-      toast.error('You do not have enough balance to add a member (Required: 4600)')
+    if (currentUser?.balance < 5000) {
+      toast.error('You do not have enough balance to add a member (Required: 5000)')
       return
     }
 
@@ -139,14 +140,38 @@ const AddMember = () => {
     const update = await updateUser(input.placeUnder, myReference) // It will add the new user to the selected user's children array
 
     if (success) {
-      // 1. Deduct 4600 from Current User (The one performing the add)
-      await moneyAddRemove(currentUser.myReference, 4600, false)
+      // 1. Deduct 5000 from Current User (The one performing the add)
+      await moneyAddRemove(currentUser.myReference, 5000, false)
+      await createTransaction({
+        userReference: currentUser.myReference,
+        amount: 5000,
+        type: 'debit',
+        category: 'registration_fee',
+        relatedUser: myReference,
+        description: `Registration fee for adding ${myReference}`,
+      })
 
-      // 2. Add 4600 to Admin (DR-261211)
-      await moneyAddRemove('DR-261211', 4600, true)
+      // 2. Add 5000 to Admin (DR-261211)
+      await moneyAddRemove('DR-261211', 5000, true)
+      await createTransaction({
+        userReference: 'DR-261211',
+        amount: 5000,
+        type: 'credit',
+        category: 'registration_fee',
+        relatedUser: myReference,
+        description: `Registration fee from ${currentUser.myReference}`,
+      })
 
       // 3. Add 500 to Referrer (input.referenceId)
       await moneyAddRemove(input.referenceId, 500, true)
+      await createTransaction({
+        userReference: input.referenceId,
+        amount: 500,
+        type: 'credit',
+        category: 'referral_bonus',
+        relatedUser: myReference,
+        description: `Referral bonus for ${myReference}`,
+      })
 
       // 4. Check and pay multi-level bonuses
       await checkAndPayLevelBonus(myReference, input.placeUnder)

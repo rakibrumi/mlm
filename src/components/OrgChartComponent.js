@@ -19,10 +19,14 @@ const BinaryTreeView = ({ allDataView }) => {
 
       if (parsedUser) {
         const singleUserData = await getUserByReference(parsedUser.myReference)
-        if (allDataView) {
-          setSelectedUserId('DR-261211')
+        if (singleUserData) {
+          if (allDataView) {
+            setSelectedUserId('DR-261211')
+          } else {
+            setSelectedUserId(singleUserData.myReference)
+          }
         } else {
-          setSelectedUserId(singleUserData.myReference)
+          setSelectedUserId('DR-261211')
         }
       } else {
         setSelectedUserId('DR-261211')

@@ -38,16 +38,16 @@ const SendMoneyPopup = ({ setOpen }) => {
       return toast.error('Please fill all the fields')
     }
 
-    const send = await sendMoney(
+    const result = await sendMoney(
       parsedUser.myReference,
       input.sendTo,
       amount
     )
-    if (send) {
+    if (result && result.success) {
       toast.success('Money sent successfully')
       window.location.reload()
     } else {
-      toast.error('Something went wrong')
+      toast.error(result?.error || 'Something went wrong')
     }
   }
 
