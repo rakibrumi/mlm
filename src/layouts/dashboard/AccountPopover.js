@@ -24,6 +24,7 @@ import { MIconButton } from '../../components/@material-extend'
 import { useRouter } from 'next/router'
 import SendMoneyPopup from '@/components/popup/SendMoneyPopup'
 import WithdrawPopup from '@/components/popup/WithdrawPopup'
+import { getAllUser2 } from '@/func/functions'
 
 // ----------------------------------------------------------------------
 
@@ -43,9 +44,49 @@ export default function AccountPopover({ user }) {
   const [copy, setCopy] = useState(false)
 
   const [open, setOpen] = useState(false)
+  const [teamCounts, setTeamCounts] = useState({ left: 0, right: 0 })
+  const [loadingCounts, setLoadingCounts] = useState(false)
 
-  const handleOpen = () => {
+  const countDescendants = (userId, userMap) => {
+    if (!userId || !userMap[userId]) return 0
+    let count = 1 // Count this node
+    const node = userMap[userId]
+    if (node.children && Array.isArray(node.children)) {
+      for (const childId of node.children) {
+        count += countDescendants(childId, userMap)
+      }
+    }
+    return count
+  }
+
+  const handleOpen = async () => {
     setOpen(true)
+    setLoadingCounts(true)
+    try {
+      const allUsers = await getAllUser2()
+      const userMap = {}
+      allUsers.forEach(u => {
+        userMap[u.myReference] = u
+      })
+
+      const currentUserNode = userMap[user.myReference]
+      let left = 0
+      let right = 0
+
+      if (currentUserNode && currentUserNode.children) {
+        if (currentUserNode.children[0]) {
+          left = countDescendants(currentUserNode.children[0], userMap)
+        }
+        if (currentUserNode.children[1]) {
+          right = countDescendants(currentUserNode.children[1], userMap)
+        }
+      }
+      setTeamCounts({ left, right })
+    } catch (error) {
+      console.error('Failed to calculate team counts', error)
+    } finally {
+      setLoadingCounts(false)
+    }
   }
   const handleClose = () => {
     setOpen(false)
@@ -101,6 +142,14 @@ export default function AccountPopover({ user }) {
           <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
             Balance: <strong>৳ {user.balance}</strong>
           </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Left Team: <strong>{loadingCounts ? '...' : teamCounts.left}</strong>
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Right Team: <strong>{loadingCounts ? '...' : teamCounts.right}</strong>
+            </Typography>
+          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               My Reference: <strong>{user.myReference}</strong>

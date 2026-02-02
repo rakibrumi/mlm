@@ -11,7 +11,7 @@ const Logo = forwardRef(({ sx }, ref) => {
   return (
     <Box ref={ref} sx={{ width: 65, height: 65, cursor: 'pointer', ...sx }}>
       <Image
-        src='/static/logo.png'
+        src='/static/logo.jpeg'
         alt='logo'
         width={65}
         height={65}

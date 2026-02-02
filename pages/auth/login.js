@@ -15,7 +15,7 @@ import AuthLayout from '@/layouts/AuthLayout'
 import Page from '@/components/Page'
 import { MHidden } from '@/components/@material-extend'
 import { useState } from 'react'
-import { login } from '@/func/functions'
+import { login, getUserByReference } from '@/func/functions'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
@@ -60,7 +60,7 @@ export default function Login() {
   const router = useRouter()
 
   useEffect(() => {
-    const fetchUserAndRedirect = () => {
+    const fetchUserAndRedirect = async () => {
       const user =
         typeof window !== 'undefined'
           ? window.localStorage.getItem('earth_user')
@@ -70,12 +70,21 @@ export default function Login() {
         try {
           const userRole = JSON.parse(user)
 
-          if (userRole) {
-            // Redirect to login page if userRole is not available
-            router.push('/')
+          if (userRole && userRole.myReference) {
+            const userData = await getUserByReference(userRole.myReference)
+            if (userData) {
+              router.push('/')
+            } else {
+              if (typeof window !== 'undefined') {
+                window.localStorage.removeItem('earth_user')
+              }
+            }
           }
         } catch (error) {
           console.error('Error parsing user information:', error)
+          if (typeof window !== 'undefined') {
+            window.localStorage.removeItem('earth_user')
+          }
         }
       }
     }
