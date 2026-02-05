@@ -189,7 +189,7 @@ export const updateUserProfile = async (referenceId, newData) => {
     const userRef = doc(db, 'user', userDoc.id)
 
     // Only allow updating specific fields
-    const { name, mobileNumber, avatarUrl, dob, father_name, mother_name, presentAddress } = newData
+    const { name, mobileNumber, avatarUrl, dob, father_name, mother_name, presentAddress, password } = newData
     const updates = {}
     if (name) updates.name = name
     if (mobileNumber) updates.mobileNumber = mobileNumber
@@ -198,6 +198,7 @@ export const updateUserProfile = async (referenceId, newData) => {
     if (father_name) updates.father_name = father_name
     if (mother_name) updates.mother_name = mother_name
     if (presentAddress) updates.presentAddress = presentAddress
+    if (password) updates.password = password
 
     await updateDoc(userRef, updates)
     return { success: true }

@@ -17,6 +17,7 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
         father_name: '',
         mother_name: '',
         presentAddress: '',
+        password: '',
     })
     const [loading, setLoading] = useState(false)
     const [uploadLoading, setUploadLoading] = useState(false)
@@ -32,6 +33,7 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
                 father_name: currentUser.father_name || '',
                 mother_name: currentUser.mother_name || '',
                 presentAddress: currentUser.presentAddress || '',
+                password: currentUser.password || '',
             })
         }
     }, [currentUser])
@@ -78,6 +80,7 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
             father_name: input.father_name,
             mother_name: input.mother_name,
             presentAddress: input.presentAddress,
+            password: input.password,
         })
 
         if (result && result.success) {
@@ -94,7 +97,8 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
                     dob: input.dob,
                     father_name: input.father_name,
                     mother_name: input.mother_name,
-                    presentAddress: input.presentAddress
+                    presentAddress: input.presentAddress,
+                    password: input.password
                 }
                 localStorage.setItem('earth_user', JSON.stringify(updatedUser))
             }
@@ -161,6 +165,17 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
                         label="Mobile Number"
                         name="mobileNumber"
                         value={input.mobileNumber}
+                        onChange={handleChange}
+                        variant="outlined"
+                        sx={{ mb: 2 }}
+                    />
+
+                    <TextField
+                        fullWidth
+                        label="Password"
+                        name="password"
+                        type="text"
+                        value={input.password}
                         onChange={handleChange}
                         variant="outlined"
                         sx={{ mb: 2 }}
