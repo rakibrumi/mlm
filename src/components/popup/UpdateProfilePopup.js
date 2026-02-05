@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import ClearIcon from '@mui/icons-material/Clear'
-import { Button, TextField, Typography, Box } from '@mui/material'
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import { Button, TextField, Typography, Box, IconButton, InputAdornment } from '@mui/material'
 import { ButtonAnimate } from '../animate'
 import { updateUserProfile } from '@/func/functions'
 import toast from 'react-hot-toast'
@@ -21,6 +23,7 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
     })
     const [loading, setLoading] = useState(false)
     const [uploadLoading, setUploadLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
 
     useEffect(() => {
         if (currentUser) {
@@ -174,11 +177,25 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
                         fullWidth
                         label="Password"
                         name="password"
-                        type="text"
+                        type={showPassword ? 'text' : 'password'}
                         value={input.password}
                         onChange={handleChange}
                         variant="outlined"
                         sx={{ mb: 2 }}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        aria-label="toggle password visibility"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        edge="end"
+                                    >
+                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
                     />
 
                     <TextField
