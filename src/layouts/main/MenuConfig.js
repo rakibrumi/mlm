@@ -9,22 +9,6 @@ const ICON_SIZE = {
   height: 22,
 }
 
-const menuConfig = [
-  {
-    title: 'Home',
-    path: '/',
-    icon: <Icon icon={homeFill} {...ICON_SIZE} />,
-  },
-  {
-    title: 'Products',
-    path: '/products',
-    icon: <Icon icon={fileFill} {...ICON_SIZE} />,
-  },
-  {
-    title: 'Marketing Plan',
-    path: '/marketing-plan',
-    icon: <Icon icon={fileFill} {...ICON_SIZE} />,
-  },
-]
+const menuConfig = []
 
 export default menuConfig

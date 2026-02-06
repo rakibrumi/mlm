@@ -124,7 +124,7 @@ export default function Login() {
   }
 
   return (
-    <RootStyle title="Login | Earth.Co">
+    <RootStyle title="Login | Good Health">
       <AuthLayout>
         {/* Don’t have an account? &nbsp;
         <Link underline="none" variant="subtitle2"  to={'/register'}>
@@ -146,7 +146,7 @@ export default function Login() {
           <Stack direction="row" alignItems="center" sx={{ mb: 5 }}>
             <Box sx={{ flexGrow: 1 }}>
               <Typography variant="h4" gutterBottom>
-                Sign in to Earth.Co
+                Sign in to Good Health
               </Typography>
               <Typography sx={{ color: 'text.secondary' }}>
                 Enter your details below.
@@ -156,7 +156,7 @@ export default function Login() {
 
           <Alert severity="info" sx={{ mb: 3 }}>
             Don't have an account? Please contact with the admin of{' '}
-            <strong>Earth.Co</strong>
+            <strong>Good Health</strong>
           </Alert>
 
           {/* <LoginForm /> */}

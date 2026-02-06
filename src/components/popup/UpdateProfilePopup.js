@@ -160,6 +160,7 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
                         value={input.name}
                         onChange={handleChange}
                         variant="outlined"
+                        disabled
                         sx={{ mb: 2 }}
                     />
 
