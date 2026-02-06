@@ -69,7 +69,7 @@ const MyAccount = () => {
 
   return (
     <MainLayout>
-      <RootStyle title="Earth.Co | My Account" id="move_top">
+      <RootStyle title="Good Health | My Account" id="move_top">
         <Container sx={{ mt: 10 }}>
           <Box
             sx={{

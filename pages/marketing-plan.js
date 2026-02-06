@@ -22,7 +22,7 @@ const plans = [
 const MarketingPlan = () => {
   return (
     <MainLayout>
-      <RootStyle title="Earth.Co | Marketing Plan" id="move_top">
+      <RootStyle title="Good Health | Marketing Plan" id="move_top">
         <Container sx={{ paddingTop: '5rem' }} maxWidth="lg">
           {/* <Typography
             variant="h3"

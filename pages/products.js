@@ -142,7 +142,7 @@ const ProductsPage = () => {
 
   return (
     <MainLayout>
-      <RootStyle title="Earth.Co | Products" id="move_top">
+      <RootStyle title="Good Health | Products" id="move_top">
         <Container sx={{ paddingTop: '5rem' }} maxWidth="lg">
           <Typography
             variant="h3"

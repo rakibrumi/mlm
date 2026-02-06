@@ -91,7 +91,7 @@ const History = () => {
 
     return (
         <MainLayout>
-            <RootStyle title="History | Earth.Co">
+            <RootStyle title="History | Good Health">
                 <Container>
                     <Typography variant="h4" gutterBottom>
                         Transaction History

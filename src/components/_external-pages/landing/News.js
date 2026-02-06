@@ -6,7 +6,7 @@ const News = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 2 }}>
       <Typography variant="h3" sx={{ py: 5, textAlign: 'center' }}>
-        News of Earth.co
+        News of Good Health
       </Typography>
 
       <Card sx={{ px: 4, py: 4 }}>
