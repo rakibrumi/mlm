@@ -22,6 +22,7 @@ const RootStyle = styled(Page)({
 const MyAccount = () => {
   const router = useRouter()
   const [allDataView, setAllDataView] = useState(false)
+  const [role, setRole] = useState(null)
 
   const handleAllMemberView = () => {
     // Retrieve the user data from localStorage
@@ -59,13 +60,20 @@ const MyAccount = () => {
           : false
       const parsedUser = user ? JSON.parse(user) : false
 
-      if (parsedUser) {
+      if (parsedUser && parsedUser.myReference) {
         setAllDataView(parsedUser.allData)
+        // Fetch full user data to get the role
+        const userData = await getUserByReference(parsedUser.myReference)
+        if (userData) {
+          setRole(userData.role)
+        }
+      } else {
+        router.push('/auth/login')
       }
     }
 
     fetchUserAndRedirect()
-  }, [])
+  }, [router])
 
   return (
     <MainLayout>
@@ -93,16 +101,23 @@ const MyAccount = () => {
               </Button>
             </ButtonAnimate>
 
-            <ButtonAnimate>
-              <Button
-                variant="contained"
-                color="primary"
-                // sx={{ mb: 1 }}
-                onClick={handleAllMemberView}
-              >
-                {allDataView ? 'View My Member' : 'View All Member'}
-              </Button>
-            </ButtonAnimate>
+            {role === 'admin' && (
+              <ButtonAnimate>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  // sx={{ mb: 1 }}
+                  onClick={() =>
+                    window.open(
+                      'https://console.firebase.google.com/u/1/project/earthco-ecad3/firestore/databases/-default-/data',
+                      '_blank'
+                    )
+                  }
+                >
+                  Admin Panel
+                </Button>
+              </ButtonAnimate>
+            )}
           </Box>
 
         </Container>
