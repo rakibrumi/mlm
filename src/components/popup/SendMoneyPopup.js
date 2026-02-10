@@ -31,9 +31,9 @@ const SendMoneyPopup = ({ setOpen }) => {
     if (amount < 0) {
       return toast.error('You cannot send negative amount')
     }
-    // if (amount < 100) {
-    //   return toast.error('You cannot send less than 100')
-    // }
+    if (amount < 300) {
+      return toast.error('You cannot send less than 300')
+    }
     if (!input.sendTo || !amount) {
       return toast.error('Please fill all the fields')
     }

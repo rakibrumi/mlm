@@ -38,8 +38,8 @@ const WithdrawPopup = ({ setOpen }) => {
     if (amount < 0) {
       return toast.error('You cannot withdraw negative amount')
     }
-    if (amount < 500) {
-      return toast.error('You cannot withdraw less than 500')
+    if (amount < 300) {
+      return toast.error('You cannot withdraw less than 300')
     }
     if (!amount) {
       return toast.error('Please input amount')
@@ -69,7 +69,7 @@ const WithdrawPopup = ({ setOpen }) => {
           {/* marque tag */}
           <marquee>
             <Typography variant="body2" sx={{ mb: 2, textAlign: 'center' }}>
-              Withdraw money will not charge any service charge.
+              Withdraw money will charge 5% service charge.
             </Typography>
           </marquee>
 
