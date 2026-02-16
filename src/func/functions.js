@@ -464,7 +464,7 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
   })
 
   await updateDoc(adminRef, {
-    balance: Number(adminData?.balance) + Number(serviceCharge),
+    balance: Number(adminData?.balance) + Number(serviceCharge) + Number(numAmount),
   })
 
   // Create transactions for user and admin
