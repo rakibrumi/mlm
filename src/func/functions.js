@@ -378,7 +378,7 @@ export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
   }
 
   await updateDoc(userRef, {
-    balance: Number(userData?.balance) - Number(amount),
+    balance: Number(userData?.balance) - Number(amount) - Number(serviceCharge),
   })
   await updateDoc(remoteUserRef, {
     balance: Number(remoteUserData?.balance) + Number(amount),
