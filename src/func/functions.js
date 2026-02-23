@@ -518,26 +518,58 @@ export const checkAndPayLevelBonus = async (newUserId, placeUnderId) => {
 
     // 2. Traverse up the ancestors
     let currentAncestorId = placeUnderId
+    let prevAncestorId = newUserId
     let relativeDepth = 1 // Depth of newUser relative to currentAncestor
 
     while (currentAncestorId) {
       const ancestor = userMap[currentAncestorId]
       if (!ancestor) break
 
-      // 3. Count descendants of 'ancestor' at 'relativeDepth'
-      const count = countDescendantsAtLevel(
-        ancestor,
-        relativeDepth,
-        userMap,
-        0
-      )
+      const children = Array.isArray(ancestor.children) ? ancestor.children : []
+      const leftChildId = children[0]
+      const rightChildId = children[1]
 
-      // 4. Check if pair completed (even number)
-      // We assume the new user is already in the tree (reflected in userMap/children),
-      // or we account for it.
-      // Since 'getAllUser2' might be called *after* the new user is added to DB (which we should ensure),
-      // the count includes the new user.
-      if (count > 0 && count % 2 === 0) {
+      let leftCount = 0
+      let rightCount = 0
+
+      // 3. Count descendants on the left branch and right branch at 'relativeDepth'
+      if (leftChildId && userMap[leftChildId]) {
+        leftCount = countDescendantsAtLevel(
+          userMap[leftChildId],
+          relativeDepth - 1,
+          userMap,
+          0
+        )
+      }
+
+      if (rightChildId && userMap[rightChildId]) {
+        rightCount = countDescendantsAtLevel(
+          userMap[rightChildId],
+          relativeDepth - 1,
+          userMap,
+          0
+        )
+      }
+
+      // 4. Check if pair completed
+      // The new user is either in the left branch or the right branch.
+      // A matching pair is completed if the branch the new user was added to
+      // is now less than or equal to the count of the other branch.
+      let pairCompleted = false
+
+      if (prevAncestorId === leftChildId) {
+        // New user is in the left branch
+        if (leftCount > 0 && leftCount <= rightCount) {
+          pairCompleted = true
+        }
+      } else if (prevAncestorId === rightChildId) {
+        // New user is in the right branch
+        if (rightCount > 0 && rightCount <= leftCount) {
+          pairCompleted = true
+        }
+      }
+
+      if (pairCompleted) {
         // Pay 500 to ancestor
         const amount = 500
         await moneyAddRemove(currentAncestorId, amount, true)
@@ -546,17 +578,18 @@ export const checkAndPayLevelBonus = async (newUserId, placeUnderId) => {
           userReference: currentAncestorId,
           amount: amount,
           type: 'credit',
-          category: 'level_bonus',
+          category: 'level_bonus', // Keep it consistent, or use matching_bonus
           relatedUser: newUserId, // The new user who triggered this
-          description: `Level bonus for pair at depth ${relativeDepth}`,
+          description: `Level matching bonus for pair at depth ${relativeDepth}`,
         })
 
         console.log(
-          `Paid ${amount} to ${currentAncestorId} for completing a pair at level ${relativeDepth} (Count: ${count})`
+          `Paid ${amount} to ${currentAncestorId} for completing a matching pair at level ${relativeDepth} (Left: ${leftCount}, Right: ${rightCount})`
         )
       }
 
       // Move up
+      prevAncestorId = currentAncestorId
       currentAncestorId = ancestor.placeUnder
       relativeDepth++
     }
