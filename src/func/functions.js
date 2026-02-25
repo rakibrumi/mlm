@@ -486,6 +486,15 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
     description: `Withdrawal charge from ${ownReferenceId}`,
   })
 
+  await createTransaction({
+    userReference: 'DR-261211',
+    amount: numAmount,
+    type: 'credit',
+    category: 'withdrawal_amount',
+    relatedUser: ownReferenceId,
+    description: `Withdrawal amount from ${ownReferenceId}`,
+  })
+
   return true
 }
 
