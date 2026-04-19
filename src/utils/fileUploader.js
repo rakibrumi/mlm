@@ -1,11 +1,25 @@
-import { storage } from 'config/firebase.init'
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
-
 const fileUploader = async file => {
-  const storageRef = ref(storage, `images/${new Date().getTime()}${file.name}`)
-  const snapshot = await uploadBytes(storageRef, file)
-  const downloadUrl = await getDownloadURL(storageRef)
-  return downloadUrl
+  const apiKey = '0ca5c9cdb23add3ecfaff014d8e4ad9c'
+  const formData = new FormData()
+  formData.append('image', file)
+
+  try {
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+      method: 'POST',
+      body: formData,
+    })
+    const data = await response.json()
+    if (data.success) {
+      return data.data.url
+    } else {
+      console.error('IMGBB Upload Error:', data)
+      return null
+    }
+  } catch (error) {
+    console.error('IMGBB Upload Fetch Error:', error)
+    return null
+  }
 }
 
 export default fileUploader
+
