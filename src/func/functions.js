@@ -764,3 +764,21 @@ export const payMonthlyBonus = async (userId, monthStr) => {
     return { success: false, error: error.message }
   }
 }
+
+export const getMonthlyBonusHistory = async () => {
+  try {
+    const q = query(
+      collection(db, 'monthlyBonuses'),
+      orderBy('date', 'desc')
+    )
+    const snap = await getDocs(q)
+    const history = []
+    snap.forEach(doc => {
+      history.push({ id: doc.id, ...doc.data() })
+    })
+    return history
+  } catch (error) {
+    console.error('Error getting monthly bonus history:', error)
+    return []
+  }
+}

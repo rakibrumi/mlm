@@ -14,16 +14,20 @@ import {
   CircularProgress,
   Alert,
   TextField,
+  Divider,
 } from '@mui/material'
 import MainLayout from '@/layouts/main'
 import Page from '@/components/Page'
-import { getMonthlyBonusCandidates, payMonthlyBonus, getUserByReference } from '@/func/functions'
+import { getMonthlyBonusCandidates, payMonthlyBonus, getUserByReference, getMonthlyBonusHistory } from '@/func/functions'
 import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
+import { formatDate } from '@/helper/helper'
 
 export default function MonthlyBonusAdmin() {
   const [candidates, setCandidates] = useState([])
+  const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(false)
   const [month, setMonth] = useState('')
   const [role, setRole] = useState(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
@@ -69,9 +73,23 @@ export default function MonthlyBonusAdmin() {
     }
   }
 
+  const fetchHistory = async () => {
+    if (role !== 'admin') return
+    setLoadingHistory(true)
+    try {
+      const data = await getMonthlyBonusHistory()
+      setHistory(data)
+    } catch (error) {
+      toast.error('Failed to fetch history')
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
   useEffect(() => {
     if (month && role === 'admin') {
       fetchCandidates()
+      fetchHistory()
     }
   }, [month, role])
 
@@ -83,6 +101,7 @@ export default function MonthlyBonusAdmin() {
       if (res.success) {
         toast.success('Bonus paid successfully')
         fetchCandidates() // Refresh list
+        fetchHistory() // Refresh history
       } else {
         toast.error(res.error || 'Failed to pay bonus')
       }
@@ -131,21 +150,22 @@ export default function MonthlyBonusAdmin() {
             </Box>
           </Box>
 
+          <Typography variant="h6" sx={{ mb: 2 }}>Eligible Candidates for {month}</Typography>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
               <CircularProgress />
             </Box>
           ) : candidates.length === 0 ? (
-            <Alert severity="info">No eligible candidates found for {month}.</Alert>
+            <Alert severity="info" sx={{ mb: 4 }}>No eligible candidates found for {month}.</Alert>
           ) : (
-            <TableContainer component={Paper}>
+            <TableContainer component={Paper} sx={{ mb: 6 }}>
               <Table>
                 <TableHead>
                   <TableRow>
                     <TableCell>Name</TableCell>
                     <TableCell>User ID</TableCell>
-                    <TableCell align="center">Left New (this month)</TableCell>
-                    <TableCell align="center">Right New (this month)</TableCell>
+                    <TableCell align="center">Left New</TableCell>
+                    <TableCell align="center">Right New</TableCell>
                     <TableCell align="center">Status</TableCell>
                     <TableCell align="right">Action</TableCell>
                   </TableRow>
@@ -175,6 +195,40 @@ export default function MonthlyBonusAdmin() {
                           {c.alreadyPaid ? 'Already Paid' : 'Pay 5000'}
                         </Button>
                       </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+
+          <Divider sx={{ my: 4 }} />
+
+          <Typography variant="h6" sx={{ mb: 2 }}>Payment History (All Time)</Typography>
+          {loadingHistory ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
+              <CircularProgress />
+            </Box>
+          ) : history.length === 0 ? (
+            <Alert severity="info">No bonus payments recorded yet.</Alert>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Date Paid</TableCell>
+                    <TableCell>User ID</TableCell>
+                    <TableCell>Bonus Month</TableCell>
+                    <TableCell align="right">Amount</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {history.map((h) => (
+                    <TableRow key={h.id}>
+                      <TableCell>{new Date(h.date).toLocaleString()}</TableCell>
+                      <TableCell>{h.userId}</TableCell>
+                      <TableCell>{h.month}</TableCell>
+                      <TableCell align="right">৳ {h.amount}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
