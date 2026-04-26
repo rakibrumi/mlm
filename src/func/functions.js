@@ -13,6 +13,7 @@ import {
   where,
   addDoc,
   orderBy,
+  increment,
 } from 'firebase/firestore'
 import firebase from 'firebase/app'
 import 'firebase/firestore'
@@ -274,10 +275,10 @@ export const giveMoneyWhileRegistration = async (referenceId, amount) => {
   }
 
   await updateDoc(userRef, {
-    balance: Number(userData?.balance) + Number(amount),
+    balance: increment(Number(amount)),
   })
   await updateDoc(adminRef, {
-    balance: Number(adminData?.balance) - Number(amount),
+    balance: increment(-Number(amount)),
   })
 
   // const updatedUser = (await getDoc(userRef)).data()
@@ -306,11 +307,11 @@ export const moneyAddRemove = async (referenceId, amount, inc) => {
 
   if (inc) {
     await updateDoc(userRef, {
-      balance: Number(userData?.balance) + Number(amount),
+      balance: increment(Number(amount)),
     })
   } else {
-    const user = await updateDoc(userRef, {
-      balance: Number(userData?.balance) - Number(amount),
+    await updateDoc(userRef, {
+      balance: increment(-Number(amount)),
     })
   }
 
@@ -378,13 +379,13 @@ export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
   }
 
   await updateDoc(userRef, {
-    balance: Number(userData?.balance) - Number(amount) - Number(serviceCharge),
+    balance: increment(-(numAmount + serviceCharge)),
   })
   await updateDoc(remoteUserRef, {
-    balance: Number(remoteUserData?.balance) + Number(amount),
+    balance: increment(numAmount),
   })
   await updateDoc(adminRef, {
-    balance: Number(adminData?.balance) + Number(serviceCharge),
+    balance: increment(serviceCharge),
   })
 
   // Create transactions for sender, receiver, and admin
@@ -460,11 +461,11 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
   }
 
   await updateDoc(userRef, {
-    balance: Number(userData?.balance) - (numAmount + serviceCharge),
+    balance: increment(-(numAmount + serviceCharge)),
   })
 
   await updateDoc(adminRef, {
-    balance: Number(adminData?.balance) + Number(serviceCharge) + Number(numAmount),
+    balance: increment(numAmount + serviceCharge),
   })
 
   // Create transactions for user and admin
@@ -514,34 +515,57 @@ export const login = async inputData => {
 }
 
 export const checkAndPayLevelBonus = async (newUserId, placeUnderId) => {
+  console.log(`Starting Level Bonus Check for ${newUserId} under ${placeUnderId}`)
   try {
-    // 1. Fetch all users to build an in-memory map for efficient traversal
-    const allUsers = await getAllUser2()
+    // 1. Build a local cache map for users to avoid redundant network calls but ensure fresh data
     const userMap = {}
+    
+    // Initial fetch to get the state of the tree
+    const allUsers = await getAllUser2()
     allUsers.forEach(user => {
       userMap[user.myReference] = user
     })
 
-    const newUser = userMap[newUserId]
-    if (!newUser) return
+    // CRITICAL: Fetch the newly added user and their immediate parent to ensure Map is up-to-date
+    const freshNewUser = await getUserByReference(newUserId)
+    const freshParent = await getUserByReference(placeUnderId)
+    
+    if (freshNewUser) userMap[newUserId] = freshNewUser
+    if (freshParent) userMap[placeUnderId] = freshParent
+
+    if (!userMap[newUserId]) {
+      console.error(`New user ${newUserId} not found even after fresh fetch.`)
+      return
+    }
 
     // 2. Traverse up the ancestors
     let currentAncestorId = placeUnderId
     let prevAncestorId = newUserId
-    let relativeDepth = 1 // Depth of newUser relative to currentAncestor
+    let relativeDepth = 1
 
     while (currentAncestorId) {
       const ancestor = userMap[currentAncestorId]
-      if (!ancestor) break
+      if (!ancestor) {
+        // Try fetching ancestor if missing from map (safety net)
+        const freshAncestor = await getUserByReference(currentAncestorId)
+        if (freshAncestor) {
+          userMap[currentAncestorId] = freshAncestor
+        } else {
+          break
+        }
+      }
 
-      const children = Array.isArray(ancestor.children) ? ancestor.children : []
+      const currentAncestor = userMap[currentAncestorId]
+      const children = Array.isArray(currentAncestor.children) ? currentAncestor.children : []
       const leftChildId = children[0]
       const rightChildId = children[1]
+
+      console.log(`Checking Ancestor ${currentAncestorId} at relative depth ${relativeDepth}. Children: [${leftChildId}, ${rightChildId}]`)
 
       let leftCount = 0
       let rightCount = 0
 
-      // 3. Count descendants on the left branch and right branch at 'relativeDepth'
+      // 3. Count descendants at level using the userMap
       if (leftChildId && userMap[leftChildId]) {
         leftCount = countDescendantsAtLevel(
           userMap[leftChildId],
@@ -560,12 +584,10 @@ export const checkAndPayLevelBonus = async (newUserId, placeUnderId) => {
         )
       }
 
-      // 4. Check if pair completed
-      // The new user is either in the left branch or the right branch.
-      // A matching pair is completed if the branch the new user was added to
-      // is now less than or equal to the count of the other branch.
-      let pairCompleted = false
+      console.log(`Ancestor ${currentAncestorId}: LeftCount=${leftCount}, RightCount=${rightCount} at depth ${relativeDepth}`)
 
+      // 4. Check if pair completed
+      let pairCompleted = false
       if (prevAncestorId === leftChildId) {
         // New user is in the left branch
         if (leftCount > 0 && leftCount <= rightCount) {
@@ -579,27 +601,24 @@ export const checkAndPayLevelBonus = async (newUserId, placeUnderId) => {
       }
 
       if (pairCompleted) {
-        // Pay 500 to ancestor
         const amount = 500
+        console.log(`MATCH FOUND! Paying ${amount} to ${currentAncestorId}`)
+        
         await moneyAddRemove(currentAncestorId, amount, true)
 
         await createTransaction({
           userReference: currentAncestorId,
           amount: amount,
           type: 'credit',
-          category: 'level_bonus', // Keep it consistent, or use matching_bonus
-          relatedUser: newUserId, // The new user who triggered this
+          category: 'level_bonus',
+          relatedUser: newUserId,
           description: `Level matching bonus for pair at depth ${relativeDepth}`,
         })
-
-        console.log(
-          `Paid ${amount} to ${currentAncestorId} for completing a matching pair at level ${relativeDepth} (Left: ${leftCount}, Right: ${rightCount})`
-        )
       }
 
       // Move up
       prevAncestorId = currentAncestorId
-      currentAncestorId = ancestor.placeUnder
+      currentAncestorId = currentAncestor.placeUnder
       relativeDepth++
     }
   } catch (error) {
@@ -618,17 +637,16 @@ const countDescendantsAtLevel = (
   if (currentDepth > targetDepth) return 0
 
   let count = 0
-  if (node.children && Array.isArray(node.children)) {
-    for (const childId of node.children) {
-      const childNode = userMap[childId]
-      if (childNode) {
-        count += countDescendantsAtLevel(
-          childNode,
-          targetDepth,
-          userMap,
-          currentDepth + 1
-        )
-      }
+  const children = Array.isArray(node.children) ? node.children : []
+  for (const childId of children) {
+    const childNode = userMap[childId]
+    if (childNode) {
+      count += countDescendantsAtLevel(
+        childNode,
+        targetDepth,
+        userMap,
+        currentDepth + 1
+      )
     }
   }
   return count
