@@ -126,6 +126,7 @@ const AddMember = () => {
       dob: formatDate(dob),
       myReference,
       balance: 0,
+      joiningDate: new Date().toISOString(),
     }
 
     const placeUnderUser = await getUserByReference(input.placeUnder)

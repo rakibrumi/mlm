@@ -88,7 +88,8 @@ const VerifyReferral = () => {
                     balance: 5000, // Enough to join
                     children: [],
                     role: 'member',
-                    mobileNumber: `${Math.floor(Math.random() * 10000000000)}`
+                    mobileNumber: `${Math.floor(Math.random() * 10000000000)}`,
+                    joiningDate: new Date().toISOString()
                 }
 
                 addLog(`Creating ${id} under ${underId}...`)

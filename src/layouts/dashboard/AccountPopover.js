@@ -1,5 +1,5 @@
 import { Icon } from '@iconify/react'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import homeFill from '@iconify/icons-eva/home-fill'
 import personFill from '@iconify/icons-eva/person-fill'
 import settings2Fill from '@iconify/icons-eva/settings-2-fill'
@@ -25,7 +25,8 @@ import { useRouter } from 'next/router'
 import SendMoneyPopup from '@/components/popup/SendMoneyPopup'
 import WithdrawPopup from '@/components/popup/WithdrawPopup'
 import UpdateProfilePopup from '@/components/popup/UpdateProfilePopup'
-import { getAllUser2 } from '@/func/functions'
+import { getAllUser2, getUserByReference } from '@/func/functions'
+import { formatDate } from '@/helper/helper'
 
 // ----------------------------------------------------------------------
 
@@ -37,7 +38,8 @@ const MENU_OPTIONS = [
 
 // ----------------------------------------------------------------------
 
-export default function AccountPopover({ user }) {
+export default function AccountPopover({ user: userProp }) {
+  const [user, setUser] = useState(userProp)
   const [sendMoneyPopup, setSendMoneyPopup] = useState(false)
   const [withdrawMoneyPopup, setWithdrawMoneyPopup] = useState(false)
   const [updateProfilePopup, setUpdateProfilePopup] = useState(false)
@@ -48,6 +50,25 @@ export default function AccountPopover({ user }) {
   const [open, setOpen] = useState(false)
   const [teamCounts, setTeamCounts] = useState({ left: 0, right: 0 })
   const [loadingCounts, setLoadingCounts] = useState(false)
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!userProp) {
+        const storedUser = localStorage.getItem('earth_user')
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser)
+          // Fetch fresh data to ensure we have joiningDate and other fields
+          const freshUser = await getUserByReference(parsed.myReference)
+          setUser(freshUser || parsed)
+        }
+      } else {
+        setUser(userProp)
+      }
+    }
+    fetchUser()
+  }, [userProp])
+
+  if (!user) return null
 
   const countDescendants = (userId, userMap) => {
     if (!userId || !userMap[userId]) return 0
@@ -150,6 +171,14 @@ export default function AccountPopover({ user }) {
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               Right Team: <strong>{loadingCounts ? '...' : teamCounts.right}</strong>
+            </Typography>
+            {teamCounts.left >= 20 && teamCounts.right >= 20 && (
+              <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+                Rank: Marketing Associates
+              </Typography>
+            )}
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Joining Date: <strong>{user.joiningDate ? formatDate(user.joiningDate) : 'N/A'}</strong>
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
