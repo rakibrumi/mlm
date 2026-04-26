@@ -102,24 +102,33 @@ const MyAccount = () => {
             </ButtonAnimate>
 
             {role === 'admin' && (
-              <ButtonAnimate>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  // sx={{ mb: 1 }}
-                  onClick={() =>
-                    window.open(
-                      'https://console.firebase.google.com/u/1/project/earthco-ecad3/firestore/databases/-default-/data',
-                      '_blank'
-                    )
-                  }
-                >
-                  Admin Panel
-                </Button>
-              </ButtonAnimate>
+              <>
+                <ButtonAnimate>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => router.push('/admin/monthly-bonus')}
+                  >
+                    Monthly Bonus
+                  </Button>
+                </ButtonAnimate>
+                <ButtonAnimate>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() =>
+                      window.open(
+                        'https://console.firebase.google.com/u/1/project/earthco-ecad3/firestore/databases/-default-/data',
+                        '_blank'
+                      )
+                    }
+                  >
+                    Admin Panel
+                  </Button>
+                </ButtonAnimate>
+              </>
             )}
           </Box>
-
         </Container>
 
         <DynamicOrganizationalChart allDataView={allDataView} />

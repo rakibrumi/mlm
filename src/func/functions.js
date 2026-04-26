@@ -651,3 +651,116 @@ const countDescendantsAtLevel = (
   }
   return count
 }
+export const getMonthlyBonusCandidates = async (monthStr) => {
+  try {
+    const allUsers = await getAllUser2()
+    const userMap = {}
+    allUsers.forEach(user => {
+      userMap[user.myReference] = user
+    })
+
+    const candidates = []
+
+    for (const user of allUsers) {
+      const children = Array.isArray(user.children) ? user.children : []
+      if (children.length < 2) continue
+
+      // Total count check for Marketing Associate (>= 20 on each side)
+      const leftTotal = countAllDescendants(children[0], userMap)
+      const rightTotal = countAllDescendants(children[1], userMap)
+
+      if (leftTotal >= 20 && rightTotal >= 20) {
+        // Calculate new members in this month
+        const leftNew = countNewInMonth(children[0], userMap, monthStr)
+        const rightNew = countNewInMonth(children[1], userMap, monthStr)
+
+        if (leftNew >= 15 && rightNew >= 15) {
+          // Check if already paid for this month
+          const q = query(
+            collection(db, 'monthlyBonuses'),
+            where('userId', '==', user.myReference),
+            where('month', '==', monthStr)
+          )
+          const snap = await getDocs(q)
+          
+          candidates.push({
+            userId: user.myReference,
+            name: user.name,
+            leftNew,
+            rightNew,
+            alreadyPaid: !snap.empty
+          })
+        }
+      }
+    }
+    return candidates
+  } catch (error) {
+    console.error('Error getting monthly bonus candidates:', error)
+    return []
+  }
+}
+
+const countAllDescendants = (userId, userMap) => {
+  if (!userId || !userMap[userId]) return 0
+  let count = 1
+  const node = userMap[userId]
+  const children = Array.isArray(node.children) ? node.children : []
+  for (const childId of children) {
+    count += countAllDescendants(childId, userMap)
+  }
+  return count
+}
+
+const countNewInMonth = (userId, userMap, monthStr) => {
+  if (!userId || !userMap[userId]) return 0
+  let count = 0
+  const node = userMap[userId]
+  
+  if (node.joiningDate && node.joiningDate.startsWith(monthStr)) {
+    count = 1
+  }
+
+  const children = Array.isArray(node.children) ? node.children : []
+  for (const childId of children) {
+    count += countNewInMonth(childId, userMap, monthStr)
+  }
+  return count
+}
+
+export const payMonthlyBonus = async (userId, monthStr) => {
+  try {
+    // Re-verify not already paid
+    const q = query(
+      collection(db, 'monthlyBonuses'),
+      where('userId', '==', userId),
+      where('month', '==', monthStr)
+    )
+    const snap = await getDocs(q)
+    if (!snap.empty) return { success: false, error: 'Already paid' }
+
+    // Pay 5000
+    await moneyAddRemove(userId, 5000, true)
+    
+    // Create Transaction
+    await createTransaction({
+      userReference: userId,
+      amount: 5000,
+      type: 'credit',
+      category: 'monthly_bonus',
+      description: `Monthly performance bonus for ${monthStr} (15/15 matches)`,
+    })
+
+    // Record History
+    await addDoc(collection(db, 'monthlyBonuses'), {
+      userId,
+      month: monthStr,
+      amount: 5000,
+      date: new Date().toISOString()
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error paying monthly bonus:', error)
+    return { success: false, error: error.message }
+  }
+}
