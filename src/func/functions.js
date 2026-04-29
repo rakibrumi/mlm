@@ -14,6 +14,7 @@ import {
   addDoc,
   orderBy,
   increment,
+  arrayUnion,
 } from 'firebase/firestore'
 import firebase from 'firebase/app'
 import 'firebase/firestore'
@@ -81,18 +82,17 @@ export const loadStorage = key => {
 
 export const handleMakeReferance = name => {
   const currentDate = new Date()
-  // const year = currentDate.getFullYear().toString().substr(-2)
   const month = (currentDate.getMonth() + 1).toString().padStart(2, '0')
   const day = currentDate.getDate().toString().padStart(2, '0')
-  // const hour = currentDate.getHours().toString().padStart(2, '0')
   const minute = currentDate.getMinutes().toString().padStart(2, '0')
-  const formattedDate = day + month + minute
+  const second = currentDate.getSeconds().toString().padStart(2, '0')
+  const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase()
+  const formattedDate = day + month + minute + second
 
   const userNameWords = name.split(' ')
+  const userInitials = `${userNameWords[0] || 'USER'}-`.toUpperCase()
 
-  const userInitials = `${userNameWords[0]}-`.toUpperCase()
-
-  const uniqueId = userInitials + formattedDate
+  const uniqueId = userInitials + formattedDate + randomSuffix
 
   return uniqueId
 }
@@ -154,14 +154,8 @@ export const updateUser = async (referenceId, newUser) => {
     const userDoc = querySnapshot.docs[0]
     const userData = userDoc.data()
 
-    // Ensure userData.children is an array
-    const currentChildren = Array.isArray(userData.children)
-      ? userData.children
-      : []
-    const newChildren = [...currentChildren, newUser]
-
     const userRef = doc(db, 'user', userDoc.id)
-    await updateDoc(userRef, { children: newChildren })
+    await updateDoc(userRef, { children: arrayUnion(newUser) })
 
     // Fetch updated user data directly from Firestore
     // await getDoc(userRef).data()
@@ -515,111 +509,93 @@ export const login = async inputData => {
 }
 
 export const checkAndPayLevelBonus = async (newUserId, placeUnderId) => {
-  console.log(`Starting Level Bonus Check for ${newUserId} under ${placeUnderId}`)
+  console.log(`Starting Optimized Level Bonus Check for ${newUserId}`)
   try {
-    // 1. Build a local cache map for users to avoid redundant network calls but ensure fresh data
-    const userMap = {}
-    
-    // Initial fetch to get the state of the tree
     const allUsers = await getAllUser2()
+    const userMap = {}
     allUsers.forEach(user => {
       userMap[user.myReference] = user
     })
 
-    // CRITICAL: Fetch the newly added user and their immediate parent to ensure Map is up-to-date
-    const freshNewUser = await getUserByReference(newUserId)
-    const freshParent = await getUserByReference(placeUnderId)
-    
-    if (freshNewUser) userMap[newUserId] = freshNewUser
-    if (freshParent) userMap[placeUnderId] = freshParent
-
-    if (!userMap[newUserId]) {
-      console.error(`New user ${newUserId} not found even after fresh fetch.`)
-      return
-    }
-
-    // 2. Traverse up the ancestors
-    let currentAncestorId = placeUnderId
-    let prevAncestorId = newUserId
+    // 1. Identify all ancestors and their branches
+    const targetAncestors = []
+    let currentId = placeUnderId
+    let prevId = newUserId
     let relativeDepth = 1
 
-    while (currentAncestorId) {
-      const ancestor = userMap[currentAncestorId]
-      if (!ancestor) {
-        // Try fetching ancestor if missing from map (safety net)
-        const freshAncestor = await getUserByReference(currentAncestorId)
-        if (freshAncestor) {
-          userMap[currentAncestorId] = freshAncestor
-        } else {
-          break
+    while (currentId && userMap[currentId]) {
+      const node = userMap[currentId]
+      const children = Array.isArray(node.children) ? node.children : []
+      targetAncestors.push({
+        id: currentId,
+        depth: relativeDepth,
+        leftChildId: children[0],
+        rightChildId: children[1],
+        prevId: prevId, // The child that leads to the new user
+        leftCount: 0,
+        rightCount: 0
+      })
+      prevId = currentId
+      currentId = node.placeUnder
+      relativeDepth++
+    }
+
+    if (targetAncestors.length === 0) return
+
+    // 2. Optimized Counting: One pass over all users
+    const ancestorLookup = {}
+    targetAncestors.forEach(a => {
+      ancestorLookup[a.id] = a
+    })
+
+    allUsers.forEach(u => {
+      let walk = u.myReference
+      let d = 0
+      let childOfWalk = null
+      
+      while (walk && d <= relativeDepth) {
+        const ancestorMatch = ancestorLookup[walk]
+        if (ancestorMatch && d === ancestorMatch.depth) {
+          if (childOfWalk === ancestorMatch.leftChildId) ancestorMatch.leftCount++
+          else if (childOfWalk === ancestorMatch.rightChildId) ancestorMatch.rightCount++
         }
+        
+        childOfWalk = walk
+        const walkNode = userMap[walk]
+        if (!walkNode) break
+        walk = walkNode.placeUnder
+        d++
       }
+    })
 
-      const currentAncestor = userMap[currentAncestorId]
-      const children = Array.isArray(currentAncestor.children) ? currentAncestor.children : []
-      const leftChildId = children[0]
-      const rightChildId = children[1]
-
-      console.log(`Checking Ancestor ${currentAncestorId} at relative depth ${relativeDepth}. Children: [${leftChildId}, ${rightChildId}]`)
-
-      let leftCount = 0
-      let rightCount = 0
-
-      // 3. Count descendants at level using the userMap
-      if (leftChildId && userMap[leftChildId]) {
-        leftCount = countDescendantsAtLevel(
-          userMap[leftChildId],
-          relativeDepth - 1,
-          userMap,
-          0
-        )
-      }
-
-      if (rightChildId && userMap[rightChildId]) {
-        rightCount = countDescendantsAtLevel(
-          userMap[rightChildId],
-          relativeDepth - 1,
-          userMap,
-          0
-        )
-      }
-
-      console.log(`Ancestor ${currentAncestorId}: LeftCount=${leftCount}, RightCount=${rightCount} at depth ${relativeDepth}`)
-
-      // 4. Check if pair completed
+    // 3. Process Bonuses
+    for (const ancestor of targetAncestors) {
       let pairCompleted = false
-      if (prevAncestorId === leftChildId) {
-        // New user is in the left branch
-        if (leftCount > 0 && leftCount <= rightCount) {
+      if (ancestor.prevId === ancestor.leftChildId) {
+        if (ancestor.leftCount > 0 && ancestor.leftCount <= ancestor.rightCount) {
           pairCompleted = true
         }
-      } else if (prevAncestorId === rightChildId) {
-        // New user is in the right branch
-        if (rightCount > 0 && rightCount <= leftCount) {
+      } else if (ancestor.prevId === ancestor.rightChildId) {
+        if (ancestor.rightCount > 0 && ancestor.rightCount <= ancestor.leftCount) {
           pairCompleted = true
         }
       }
 
       if (pairCompleted) {
         const amount = 500
-        console.log(`MATCH FOUND! Paying ${amount} to ${currentAncestorId}`)
+        console.log(`MATCH FOUND! Paying ${amount} to ${ancestor.id} for depth ${ancestor.depth}`)
         
-        await moneyAddRemove(currentAncestorId, amount, true)
+        await moneyAddRemove(ancestor.id, amount, true)
 
         await createTransaction({
-          userReference: currentAncestorId,
+          userReference: ancestor.id,
           amount: amount,
           type: 'credit',
           category: 'level_bonus',
           relatedUser: newUserId,
-          description: `Level matching bonus for pair at depth ${relativeDepth}`,
+          description: `Level matching bonus for pair at depth ${ancestor.depth}`,
         })
       }
-
-      // Move up
-      prevAncestorId = currentAncestorId
-      currentAncestorId = currentAncestor.placeUnder
-      relativeDepth++
     }
   } catch (error) {
     console.error('Error in checkAndPayLevelBonus:', error)

@@ -15,6 +15,16 @@ const firebaseConfig = {
   appId: '1:1031853299242:web:d7dc3bd030b07a362c5553',
 }
 
+// const firebaseConfig = {
+//   apiKey: "AIzaSyDgCq_FrQ5uMf8tvbJB6bP2YuxOpN2TLbY",
+//   authDomain: "madrassa-3d986.firebaseapp.com",
+//   databaseURL: "https://madrassa-3d986-default-rtdb.firebaseio.com",
+//   projectId: "madrassa-3d986",
+//   storageBucket: "madrassa-3d986.appspot.com",
+//   messagingSenderId: "357816431577",
+//   appId: "1:357816431577:web:574cafa5a8f2e91cc51fc8"
+// }
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)
 const auth = getAuth(app)
