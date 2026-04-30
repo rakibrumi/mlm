@@ -94,6 +94,16 @@ const MyAccount = () => {
               <Button
                 variant="contained"
                 color="primary"
+                onClick={() => router.push('/marketing-plan')}
+              >
+                Marketing plan
+              </Button>
+            </ButtonAnimate>
+
+            <ButtonAnimate>
+              <Button
+                variant="contained"
+                color="primary"
                 // sx={{ mt: 5, mb: 1 }}
                 onClick={() => router.push('/auth/add-member')}
               >
