@@ -39,7 +39,7 @@ const OldTransactions = () => {
     const [transactions, setTransactions] = useState([])
     const [loading, setLoading] = useState(true)
     const [isAdmin, setIsAdmin] = useState(false)
-    
+
     // Search and Pagination states
     const [searchTerm, setSearchTerm] = useState('')
     const [filterType, setFilterType] = useState('all')
@@ -106,15 +106,15 @@ const OldTransactions = () => {
 
     // Filtering logic
     const filteredTransactions = transactions.filter((item) => {
-        const matchesSearch = 
+        const matchesSearch =
             (item.description?.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (item.userReference?.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (item.relatedUser?.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (item.category?.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (item.id?.toLowerCase().includes(searchTerm.toLowerCase()))
-        
+
         const matchesType = filterType === 'all' || item.type === filterType
-        
+
         return matchesSearch && matchesType
     })
 
@@ -135,9 +135,7 @@ const OldTransactions = () => {
                         <Typography variant="h4" gutterBottom>
                             Old Transaction Records (Archived)
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                            This data is loaded directly from the <strong>public/transactions.json</strong> file.
-                        </Typography>
+
                     </Box>
 
                     <Paper sx={{ p: 3, mb: 3 }}>
