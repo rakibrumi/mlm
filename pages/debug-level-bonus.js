@@ -12,11 +12,12 @@ import {
 import {
   addUser,
   updateUser,
-  checkAndPayLevelBonus,
+  checkAndPayMatchingBonus,
   moneyAddRemove,
   createTransaction,
   getUserByReference,
-  getAllUser2
+  getAllUser2,
+  initializeAllUserMatches
 } from '@/func/functions'
 
 const DebugLevelBonus = () => {
@@ -28,18 +29,7 @@ const DebugLevelBonus = () => {
     setLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`])
   }
 
-  const clearDatabase = async () => {
-    addLog('Clearing user and transactions collections...')
-    const usersSnap = await getDocs(collection(db, 'user'))
-    for (const d of usersSnap.docs) {
-      await deleteDoc(doc(db, 'user', d.id))
-    }
-    const transSnap = await getDocs(collection(db, 'transactions'))
-    for (const d of transSnap.docs) {
-      await deleteDoc(doc(db, 'transactions', d.id))
-    }
-    addLog('Database cleared.')
-  }
+
 
   const createTestUser = async (name, myReference, placeUnder, side = 'left') => {
     const data = {
@@ -68,7 +58,7 @@ const DebugLevelBonus = () => {
     setIsRunning(true)
     setLogs([])
     try {
-      await clearDatabase()
+      
       const adminId = 'DR-261211'
       await createTestUser('Main Admin', adminId, null)
 
@@ -85,14 +75,14 @@ const DebugLevelBonus = () => {
         // Create Left
         const leftId = `${parent.id}-L`
         await createTestUser(`User ${leftId}`, leftId, parent.id)
-        await checkAndPayLevelBonus(leftId, parent.id)
+        await checkAndPayMatchingBonus(leftId, parent.id)
         queue.push({ id: leftId, depth: parent.depth + 1 })
         count++
 
         // Create Right
         const rightId = `${parent.id}-R`
         await createTestUser(`User ${rightId}`, rightId, parent.id)
-        await checkAndPayLevelBonus(rightId, parent.id)
+        await checkAndPayMatchingBonus(rightId, parent.id)
         queue.push({ id: rightId, depth: parent.depth + 1 })
         count++
         
@@ -120,11 +110,11 @@ const DebugLevelBonus = () => {
     let adminBonuses = 0
     transSnap.forEach(d => {
       const t = d.data()
-      if (t.userReference === adminId && t.category === 'level_bonus') {
+      if (t.userReference === adminId && t.category === 'matching_bonus') {
         adminBonuses++
       }
     })
-    addLog(`Total Level Matches for Admin: ${adminBonuses}`)
+    addLog(`Total Matching Bonuses for Admin: ${adminBonuses}`)
     
     if (adminBonuses === expectedMatches) {
       addLog(`SUCCESS: Admin received all ${expectedMatches} matches!`)
@@ -137,7 +127,7 @@ const DebugLevelBonus = () => {
     setIsRunning(true)
     setLogs([])
     try {
-      await clearDatabase()
+      
       const adminId = 'DR-261211'
       await createTestUser('Main Admin', adminId, null)
 
@@ -152,7 +142,7 @@ const DebugLevelBonus = () => {
       for (let i = 1; i <= 20; i++) {
         const userId = `R${i}`
         await createTestUser(`User R${i}`, userId, lastRightId)
-        await checkAndPayLevelBonus(userId, lastRightId)
+        await checkAndPayMatchingBonus(userId, lastRightId)
         lastRightId = userId
       }
 
@@ -167,7 +157,7 @@ const DebugLevelBonus = () => {
     setIsRunning(true)
     setLogs([])
     try {
-      await clearDatabase()
+      
       const adminId = 'DR-261211'
       await createTestUser('Main Admin', adminId, null)
 
@@ -185,7 +175,7 @@ const DebugLevelBonus = () => {
         const userId = `U-${i}`
         
         await createTestUser(`User ${userId}`, userId, parentId)
-        await checkAndPayLevelBonus(userId, parentId)
+        await checkAndPayMatchingBonus(userId, parentId)
         
         const currentDepth = userDepths[parentId] + 1
         userDepths[userId] = currentDepth
@@ -239,15 +229,7 @@ const DebugLevelBonus = () => {
         } else {
           addLog(`  ❌ FAILURE! Actual Matches: ${actual}, Expected Matches: ${expected}`)
           // Debug breakdown
-          const leftRoot = user.children[0]
-          const rightRoot = user.children[1]
-          for (let d = 1; d <= 10; d++) {
-            const l = countAtRelativeDepth(leftRoot, d - 1, userMap)
-            const r = countAtRelativeDepth(rightRoot, d - 1, userMap)
-            if (l > 0 || r > 0) {
-              addLog(`    Depth ${d}: Left=${l}, Right=${r} -> Match: ${Math.min(l, r)}`)
-            }
-          }
+          addLog(`    Left Total=${leftTotal}, Right Total=${rightTotal} -> Match: ${Math.min(leftTotal, rightTotal)}`)
         }
       }
 
@@ -262,7 +244,7 @@ const DebugLevelBonus = () => {
     setIsRunning(true)
     setLogs([])
     try {
-      await clearDatabase()
+      
       const adminId = 'DR-261211'
       await createTestUser('Main Admin', adminId, null)
 
@@ -293,7 +275,7 @@ const DebugLevelBonus = () => {
         if (i % 20 === 0) addLog(`Added ${i} users...`)
       }
 
-      addLog('Random Tree Created. Verifying ALL users for correct level bonuses...')
+      addLog('Random Tree Created. Verifying ALL users for correct matching bonuses...')
       
       const allUsers = await getAllUser2()
       const userMap = {}
@@ -316,7 +298,7 @@ const DebugLevelBonus = () => {
       }
 
       if (failCount === 0) {
-        addLog(`SUCCESS: All ${successCount} users have the correct level bonus balance!`)
+        addLog(`SUCCESS: All ${successCount} users have the correct matching bonus balance!`)
       } else {
         addLog(`FAILURE: ${failCount} users have incorrect balances.`)
       }
@@ -327,41 +309,54 @@ const DebugLevelBonus = () => {
     setIsRunning(false)
   }
 
+  const handleInitializeMatches = async () => {
+    if (!window.confirm('Are you sure you want to initialize paidMatches for ALL users? This will NOT pay any bonuses, only sync current states.')) return
+    setIsRunning(true)
+    addLog('Starting Global Match Initialization...')
+    const result = await initializeAllUserMatches()
+    if (result.success) {
+      addLog(`SUCCESS: Initialized ${result.count} users.`)
+    } else {
+      addLog(`ERROR: ${result.error}`)
+    }
+    setIsRunning(false)
+  }
+
   const calculateExpectedBonus = (uid, userMap) => {
     const node = userMap[uid]
-    if (!node || !node.children || node.children.length < 2) return 0
+    if (!node || !node.children || node.children.length < 1) return 0
     
-    let totalMatches = 0
     const leftRoot = node.children[0]
     const rightRoot = node.children[1]
 
-    // Check every relative depth
-    for (let d = 1; d <= 20; d++) {
-      const leftCount = countAtRelativeDepth(leftRoot, d - 1, userMap)
-      const rightCount = countAtRelativeDepth(rightRoot, d - 1, userMap)
-      totalMatches += Math.min(leftCount, rightCount)
-    }
-    return totalMatches
+    const leftTotal = countAllDescendants(leftRoot, userMap)
+    const rightTotal = countAllDescendants(rightRoot, userMap)
+    
+    return Math.min(leftTotal, rightTotal)
   }
 
-  const countAtRelativeDepth = (rootId, targetD, userMap) => {
-    if (!rootId || !userMap[rootId]) return 0
-    let nodesAtDepth = [rootId]
-    for (let i = 0; i < targetD; i++) {
-      let nextLevel = []
-      nodesAtDepth.forEach(id => {
-        const n = userMap[id]
-        if (n && n.children) nextLevel.push(...n.children)
-      })
-      nodesAtDepth = nextLevel
+  const countAllDescendants = (userId, userMap) => {
+    if (!userId || !userMap[userId]) return 0
+    let count = 1
+    const node = userMap[userId]
+    const children = Array.isArray(node.children) ? node.children : []
+    for (const childId of children) {
+      count += countAllDescendants(childId, userMap)
     }
-    return nodesAtDepth.length
+    return count
   }
 
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <h1>Level Bonus Debugger</h1>
+      <h1>Matching Bonus Debugger</h1>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
+        <button 
+          onClick={handleInitializeMatches} 
+          disabled={isRunning}
+          style={{ background: '#FF5722', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}
+        >
+          Initialize All User Matches (Run Once)
+        </button>
         <button onClick={runSparse20Test} disabled={isRunning}>Run Sparse 20-Level Test</button>
         <button onClick={() => runRandomGrowthTest(100)} disabled={isRunning}>Run Random Growth Test (100 nodes)</button>
         <button 

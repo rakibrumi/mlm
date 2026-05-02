@@ -17,7 +17,7 @@ import {
   addUser,
   getAllUser,
   getUserByReference,
-  checkAndPayLevelBonus,
+  checkAndPayMatchingBonus,
   giveMoneyWhileRegistration,
   handleMakeReferance,
   moneyAddRemove,
@@ -174,8 +174,8 @@ const AddMember = () => {
         description: `Referral bonus for ${myReference}`,
       })
 
-      // 4. Check and pay multi-level bonuses
-      await checkAndPayLevelBonus(myReference, input.placeUnder)
+      // 4. Check and pay matching bonuses
+      await checkAndPayMatchingBonus(myReference, input.placeUnder)
 
       setIsSpinner(false)
       Swal.fire({

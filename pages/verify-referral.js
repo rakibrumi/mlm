@@ -3,7 +3,7 @@ import { Container, Button, Typography, Box, Paper, TextField } from '@mui/mater
 import {
     addUser,
     getUserByReference,
-    checkAndPayLevelBonus,
+    checkAndPayMatchingBonus,
     moneyAddRemove,
 } from '@/func/functions'
 import { updateDoc, doc, collection, getDocs, deleteDoc } from 'firebase/firestore'
@@ -114,9 +114,9 @@ const VerifyReferral = () => {
                 await moneyAddRemove(refId, 500, true)
                 addLog(`Paid 500 Direct Referral Bonus to ${refId}`)
 
-                // Check Level Bonus
-                addLog(`Checking Level Bonus for ${id}...`)
-                await checkAndPayLevelBonus(id, underId)
+                // Check Matching Bonus
+                addLog(`Checking Matching Bonus for ${id}...`)
+                await checkAndPayMatchingBonus(id, underId)
 
                 return id
             }

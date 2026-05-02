@@ -508,8 +508,8 @@ export const login = async inputData => {
   return user
 }
 
-export const checkAndPayLevelBonus = async (newUserId, placeUnderId) => {
-  console.log(`Starting Optimized Level Bonus Check for ${newUserId}`)
+export const checkAndPayMatchingBonus = async (newUserId, placeUnderId) => {
+  console.log(`Starting Matching Bonus Check for ${newUserId}`)
   try {
     const allUsers = await getAllUser2()
     const userMap = {}
@@ -517,88 +517,112 @@ export const checkAndPayLevelBonus = async (newUserId, placeUnderId) => {
       userMap[user.myReference] = user
     })
 
-    // 1. Identify all ancestors and their branches
-    const targetAncestors = []
     let currentId = placeUnderId
-    let prevId = newUserId
-    let relativeDepth = 1
-
     while (currentId && userMap[currentId]) {
-      const node = userMap[currentId]
-      const children = Array.isArray(node.children) ? node.children : []
-      targetAncestors.push({
-        id: currentId,
-        depth: relativeDepth,
-        leftChildId: children[0],
-        rightChildId: children[1],
-        prevId: prevId, // The child that leads to the new user
-        leftCount: 0,
-        rightCount: 0
-      })
-      prevId = currentId
-      currentId = node.placeUnder
-      relativeDepth++
-    }
-
-    if (targetAncestors.length === 0) return
-
-    // 2. Optimized Counting: One pass over all users
-    const ancestorLookup = {}
-    targetAncestors.forEach(a => {
-      ancestorLookup[a.id] = a
-    })
-
-    allUsers.forEach(u => {
-      let walk = u.myReference
-      let d = 0
-      let childOfWalk = null
+      const ancestor = userMap[currentId]
+      const children = Array.isArray(ancestor.children) ? ancestor.children : []
       
-      while (walk && d <= relativeDepth) {
-        const ancestorMatch = ancestorLookup[walk]
-        if (ancestorMatch && d === ancestorMatch.depth) {
-          if (childOfWalk === ancestorMatch.leftChildId) ancestorMatch.leftCount++
-          else if (childOfWalk === ancestorMatch.rightChildId) ancestorMatch.rightCount++
-        }
+      if (children.length >= 1) {
+        const leftChildId = children[0]
+        const rightChildId = children[1]
         
-        childOfWalk = walk
-        const walkNode = userMap[walk]
-        if (!walkNode) break
-        walk = walkNode.placeUnder
-        d++
-      }
-    })
-
-    // 3. Process Bonuses
-    for (const ancestor of targetAncestors) {
-      let pairCompleted = false
-      if (ancestor.prevId === ancestor.leftChildId) {
-        if (ancestor.leftCount > 0 && ancestor.leftCount <= ancestor.rightCount) {
-          pairCompleted = true
-        }
-      } else if (ancestor.prevId === ancestor.rightChildId) {
-        if (ancestor.rightCount > 0 && ancestor.rightCount <= ancestor.leftCount) {
-          pairCompleted = true
-        }
-      }
-
-      if (pairCompleted) {
-        const amount = 500
-        console.log(`MATCH FOUND! Paying ${amount} to ${ancestor.id} for depth ${ancestor.depth}`)
+        // Total descendants on Left and Right sides
+        const leftCount = countAllDescendants(leftChildId, userMap)
+        const rightCount = countAllDescendants(rightChildId, userMap)
         
-        await moneyAddRemove(ancestor.id, amount, true)
+        const currentMatches = Math.min(leftCount, rightCount)
+        const paidMatches = ancestor.paidMatches || 0
+        
+        if (currentMatches > paidMatches) {
+          const newMatchesToPay = currentMatches - paidMatches
+          const amountPerMatch = 500
+          const totalAmount = newMatchesToPay * amountPerMatch
+          
+          console.log(`MATCH FOUND! Paying ${totalAmount} to ${ancestor.myReference} for ${newMatchesToPay} new matches. Total matches: ${currentMatches}`)
+          
+          // Pay the money
+          await moneyAddRemove(ancestor.myReference, totalAmount, true)
+          
+          // Update paidMatches in DB
+          const userQuery = query(
+            collection(db, 'user'),
+            where('myReference', '==', ancestor.myReference)
+          )
+          const querySnapshot = await getDocs(userQuery)
+          if (!querySnapshot.empty) {
+            const userDocRef = doc(db, 'user', querySnapshot.docs[0].id)
+            await updateDoc(userDocRef, { paidMatches: currentMatches })
+          }
 
-        await createTransaction({
-          userReference: ancestor.id,
-          amount: amount,
-          type: 'credit',
-          category: 'level_bonus',
-          relatedUser: newUserId,
-          description: `Level matching bonus for pair at depth ${ancestor.depth}`,
-        })
+          // Update Transaction log
+          await createTransaction({
+            userReference: ancestor.myReference,
+            amount: totalAmount,
+            type: 'credit',
+            category: 'matching_bonus',
+            relatedUser: newUserId,
+            description: `Matching bonus for ${newMatchesToPay} new pair(s). Total matches: ${currentMatches}`,
+          })
+
+          // Check for Rank Promotion (Marketing Associate at 20 matches)
+          if (currentMatches >= 20 && ancestor.rank !== 'Marketing Associate') {
+            const userQueryRank = query(
+              collection(db, 'user'),
+              where('myReference', '==', ancestor.myReference)
+            )
+            const snapRank = await getDocs(userQueryRank)
+            if (!snapRank.empty) {
+              const userDocRef = doc(db, 'user', snapRank.docs[0].id)
+              await updateDoc(userDocRef, { rank: 'Marketing Associate' })
+              console.log(`User ${ancestor.myReference} promoted to Marketing Associate!`)
+            }
+          }
+        }
       }
+      
+      currentId = ancestor.placeUnder
     }
   } catch (error) {
-    console.error('Error in checkAndPayLevelBonus:', error)
+    console.error('Error in checkAndPayMatchingBonus:', error)
+  }
+}
+
+export const initializeAllUserMatches = async () => {
+  console.log('Initializing all user matches...')
+  try {
+    const allUsers = await getAllUser2()
+    const userMap = {}
+    allUsers.forEach(user => {
+      userMap[user.myReference] = user
+    })
+
+    let count = 0
+    for (const user of allUsers) {
+      const children = Array.isArray(user.children) ? user.children : []
+      if (children.length >= 1) {
+        const leftCount = countAllDescendants(children[0], userMap)
+        const rightCount = countAllDescendants(children[1], userMap)
+        const currentMatches = Math.min(leftCount, rightCount)
+        
+        // Update in DB (Assuming doc ID is myReference as per addUser)
+        const userRef = doc(db, 'user', user.myReference)
+        const updates = { paidMatches: currentMatches }
+        
+        // Also sync Rank during initialization if they already have 20 matches
+        if (currentMatches >= 20) {
+          updates.rank = 'Marketing Associate'
+        }
+        
+        await updateDoc(userRef, updates)
+        count++
+      }
+    }
+    
+    console.log(`Successfully initialized matches for ${count} users.`)
+    return { success: true, count }
+  } catch (error) {
+    console.error('Error initializing matches:', error)
+    return { success: false, error: error.message }
   }
 }
 
@@ -641,32 +665,37 @@ export const getMonthlyBonusCandidates = async (monthStr) => {
       const children = Array.isArray(user.children) ? user.children : []
       if (children.length < 2) continue
 
-      // Total count check for Marketing Associate (>= 20 on each side)
+      // Rank check: Must be Marketing Associate
+      if (user.rank !== 'Marketing Associate') continue
+
       const leftTotal = countAllDescendants(children[0], userMap)
       const rightTotal = countAllDescendants(children[1], userMap)
+      
+      const leftNew = countNewInMonth(children[0], userMap, monthStr)
+      const rightNew = countNewInMonth(children[1], userMap, monthStr)
+      
+      // Calculate how many NEW matches were created this month
+      const currentMatching = Math.min(leftTotal, rightTotal)
+      const previousMatching = Math.min(leftTotal - leftNew, rightTotal - rightNew)
+      
+      const monthlyNewMatches = currentMatching - previousMatching
 
-      if (leftTotal >= 20 && rightTotal >= 20) {
-        // Calculate new members in this month
-        const leftNew = countNewInMonth(children[0], userMap, monthStr)
-        const rightNew = countNewInMonth(children[1], userMap, monthStr)
-
-        if (leftNew >= 15 && rightNew >= 15) {
-          // Check if already paid for this month
-          const q = query(
-            collection(db, 'monthlyBonuses'),
-            where('userId', '==', user.myReference),
-            where('month', '==', monthStr)
-          )
-          const snap = await getDocs(q)
-          
-          candidates.push({
-            userId: user.myReference,
-            name: user.name,
-            leftNew,
-            rightNew,
-            alreadyPaid: !snap.empty
-          })
-        }
+      // Condition: 15+ new matches AND must have been Marketing Associate before this month
+      if (monthlyNewMatches >= 15 && previousMatching >= 20) {
+        // Check if already paid for this month
+        const q = query(
+          collection(db, 'monthlyBonuses'),
+          where('userId', '==', user.myReference),
+          where('month', '==', monthStr)
+        )
+        const snap = await getDocs(q)
+        
+        candidates.push({
+          userId: user.myReference,
+          name: user.name,
+          newMatches: monthlyNewMatches,
+          alreadyPaid: !snap.empty
+        })
       }
     }
     return candidates
@@ -723,7 +752,7 @@ export const payMonthlyBonus = async (userId, monthStr) => {
       amount: 5000,
       type: 'credit',
       category: 'monthly_bonus',
-      description: `Monthly performance bonus for ${monthStr} (15/15 matches)`,
+      description: `Monthly performance bonus for ${monthStr} (15+ new matches)`,
     })
 
     // Record History
