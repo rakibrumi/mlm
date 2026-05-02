@@ -126,6 +126,15 @@ const MyAccount = () => {
                   <Button
                     variant="contained"
                     color="primary"
+                    onClick={() => router.push('/old-transactions')}
+                  >
+                    Old Transactions
+                  </Button>
+                </ButtonAnimate>
+                <ButtonAnimate>
+                  <Button
+                    variant="contained"
+                    color="primary"
                     onClick={() =>
                       window.open(
                         'https://console.firebase.google.com/u/1/project/earthco-ecad3/firestore/databases/-default-/data',

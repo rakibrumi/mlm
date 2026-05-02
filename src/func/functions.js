@@ -787,3 +787,20 @@ export const getMonthlyBonusHistory = async () => {
     return []
   }
 }
+export const getOldTransactions = async () => {
+  try {
+    const q = query(
+      collection(db, 'old_transactions')
+    )
+    const querySnapshot = await getDocs(q)
+    const transactions = []
+    querySnapshot.forEach((doc) => {
+      transactions.push({ id: doc.id, ...doc.data() })
+    })
+    // Sort in memory by date descending
+    return transactions.sort((a, b) => new Date(b.date) - new Date(a.date))
+  } catch (error) {
+    console.error('Error fetching old transactions:', error)
+    return []
+  }
+}
