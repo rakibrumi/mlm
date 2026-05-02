@@ -54,20 +54,37 @@ const MyAccount = () => {
 
   useEffect(() => {
     const fetchUserAndRedirect = async () => {
-      const user =
-        typeof window !== 'undefined'
-          ? window.localStorage.getItem('earth_user')
-          : false
-      const parsedUser = user ? JSON.parse(user) : false
-
-      if (parsedUser && parsedUser.myReference) {
-        setAllDataView(parsedUser.allData)
-        // Fetch full user data to get the role
-        const userData = await getUserByReference(parsedUser.myReference)
-        if (userData) {
-          setRole(userData.role)
+      try {
+        const user =
+          typeof window !== 'undefined'
+            ? window.localStorage.getItem('earth_user')
+            : false
+        
+        if (!user) {
+          router.push('/auth/login')
+          return
         }
-      } else {
+
+        const parsedUser = JSON.parse(user)
+
+        if (parsedUser && parsedUser.myReference) {
+          setAllDataView(parsedUser.allData)
+          // Fetch full user data to get the role
+          const userData = await getUserByReference(parsedUser.myReference)
+          if (userData) {
+            setRole(userData.role)
+          } else {
+            // User exists in localStorage but not in DB
+            console.error('User not found in database')
+            window.localStorage.removeItem('earth_user')
+            router.push('/auth/login')
+          }
+        } else {
+          router.push('/auth/login')
+        }
+      } catch (error) {
+        console.error('Error in MyAccount authentication check:', error)
+        window.localStorage.removeItem('earth_user')
         router.push('/auth/login')
       }
     }
