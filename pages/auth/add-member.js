@@ -120,7 +120,7 @@ const AddMember = () => {
       return
     }
     setIsSpinner(true)
-    const myReference = handleMakeReferance(input.name)
+    const myReference = await handleMakeReferance(input.name)
     const data = {
       ...input,
       dob: formatDate(dob),

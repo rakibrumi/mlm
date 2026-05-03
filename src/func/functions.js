@@ -80,19 +80,23 @@ export const loadStorage = key => {
   }
 }
 
-export const handleMakeReferance = name => {
-  const currentDate = new Date()
-  const month = (currentDate.getMonth() + 1).toString().padStart(2, '0')
-  const day = currentDate.getDate().toString().padStart(2, '0')
-  const minute = currentDate.getMinutes().toString().padStart(2, '0')
-  const second = currentDate.getSeconds().toString().padStart(2, '0')
-  const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase()
-  const formattedDate = day + month + minute + second
-
+export const handleMakeReferance = async name => {
   const userNameWords = name.split(' ')
-  const userInitials = `${userNameWords[0] || 'USER'}-`.toUpperCase()
+  const userInitials = (userNameWords[0] || 'USER').toUpperCase()
 
-  const uniqueId = userInitials + formattedDate + randomSuffix
+  let uniqueId = ''
+  let isUnique = false
+
+  while (!isUnique) {
+    const random4Digits = Math.floor(1000 + Math.random() * 9000)
+    uniqueId = `${userInitials}${random4Digits}`
+
+    // Check if this reference ID already exists in the database
+    const existingUser = await getUserByReference(uniqueId)
+    if (!existingUser) {
+      isUnique = true
+    }
+  }
 
   return uniqueId
 }
