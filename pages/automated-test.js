@@ -71,7 +71,7 @@ const AutomatedTest = () => {
         setLogs([])
         try {
             await clearDB()
-            const adminId = 'RAKIB'
+            const adminId = 'GOODHEALTH-8384'
             addLog('Creating Admin User...')
             await addUser({
                 name: 'System Admin',

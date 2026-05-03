@@ -38,7 +38,7 @@ const DebugLevelBonus = () => {
       placeUnder: placeUnder || '',
       children: [],
       balance: 100000, // Give them plenty of money for testing
-      role: myReference === 'RAKIB' ? 'admin' : 'member',
+      role: myReference === 'GOODHEALTH-8384' ? 'admin' : 'member',
       mobileNumber: Math.floor(Math.random() * 1000000000).toString(),
       password: 'password123',
       joiningDate: new Date().toISOString(),
@@ -59,7 +59,7 @@ const DebugLevelBonus = () => {
     setLogs([])
     try {
 
-      const adminId = 'RAKIB'
+      const adminId = 'GOODHEALTH-8384'
       await createTestUser('Main Admin', adminId, null)
 
       const queue = [{ id: adminId, depth: 0 }]
@@ -128,7 +128,7 @@ const DebugLevelBonus = () => {
     setLogs([])
     try {
 
-      const adminId = 'RAKIB'
+      const adminId = 'GOODHEALTH-8384'
       await createTestUser('Main Admin', adminId, null)
 
       let lastUserId = adminId
@@ -158,7 +158,7 @@ const DebugLevelBonus = () => {
     setLogs([])
     try {
 
-      const adminId = 'RAKIB'
+      const adminId = 'GOODHEALTH-8384'
       await createTestUser('Main Admin', adminId, null)
 
       const allUserIds = [adminId]
@@ -245,7 +245,7 @@ const DebugLevelBonus = () => {
     setLogs([])
     try {
 
-      const adminId = 'RAKIB'
+      const adminId = 'GOODHEALTH-8384'
       await createTestUser('Main Admin', adminId, null)
 
       const availableSlots = [adminId]

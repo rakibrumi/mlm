@@ -18,7 +18,7 @@ const VerifyReferral = () => {
 
     const fetchRootBalance = async () => {
         try {
-            const user = await getUserByReference('RAKIB')
+            const user = await getUserByReference('GOODHEALTH-8384')
             if (user) setRootBalance(user.balance)
         } catch (e) {
             console.error(e)
@@ -45,13 +45,13 @@ const VerifyReferral = () => {
             await Promise.all(deletes)
 
             // Reset Root children and balance (optional, but good for clean state)
-            const root = await getUserByReference('RAKIB')
+            const root = await getUserByReference('GOODHEALTH-8384')
             if (root) {
                 // Note: resetting balance might be tricky if real money is there, but for test we can just clear children
                 await updateDoc(doc(db, 'user', root.mobileNumber), { children: [] }) // Assuming docID logic. Wait, functions.js uses data.myReference as doc ID in `addUser`?
                 // In functions.js: `await setDoc(doc(db, 'user', data.myReference), data)`
                 // So doc ID is myReference.
-                await updateDoc(doc(db, 'user', 'RAKIB'), { children: [] })
+                await updateDoc(doc(db, 'user', 'GOODHEALTH-8384'), { children: [] })
             }
 
             addLog('Reset Complete. Root children cleared.')
@@ -69,10 +69,10 @@ const VerifyReferral = () => {
         addLog('Starting Simulation...')
 
         try {
-            const rootId = 'RAKIB'
+            const rootId = 'GOODHEALTH-8384'
             const rootUser = await getUserByReference(rootId)
             if (!rootUser) {
-                addLog('Error: RAKIB not found!')
+                addLog('Error: GOODHEALTH-8384 not found!')
                 setLoading(false)
                 return
             }
@@ -107,7 +107,7 @@ const VerifyReferral = () => {
                 // 3. Transactions (Simulate add-member logic)
                 // Deduct 4600 from new user (skipped as it's test user)
                 // Add 4600 to Admin
-                await moneyAddRemove('RAKIB', 4600, true)
+                await moneyAddRemove('GOODHEALTH-8384', 4600, true)
                 addLog(`Paid 4600 Joining Fee to Admin`)
 
                 // Check Referral Bonus
@@ -157,7 +157,7 @@ const VerifyReferral = () => {
         <Container maxWidth="md" sx={{ mt: 10, mb: 10 }}>
             <Typography variant="h4" gutterBottom>Referral System Verification</Typography>
             <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6">Root User: RAKIB</Typography>
+                <Typography variant="h6">Root User: GOODHEALTH-8384</Typography>
                 <Typography variant="body1">Current Balance: {rootBalance}</Typography>
             </Paper>
 

@@ -14,9 +14,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 async function createAdmin() {
-  const adminId = 'RAKIB';
+  const adminId = 'GOODHEALTH-8384';
   const adminData = {
-    name: 'Rakib Rumi',
+    name: 'S.M. RAKIB HOSSAIN',
     mobileNumber: '01637222737',
     password: '123456',
     role: 'admin',

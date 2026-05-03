@@ -327,7 +327,7 @@ export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
   )
   const adminUserQuery = query(
     collection(db, 'user'),
-    where('myReference', '==', 'RAKIB')
+    where('myReference', '==', 'GOODHEALTH-8384')
   )
 
   const querySnapshot = await getDocs(userQuery)
@@ -346,7 +346,7 @@ export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
 
   if (adminQuerySnapshot.empty) {
     console.log('Admin user not found')
-    toast.error('System Admin (RAKIB) not found. Contact Support.')
+    toast.error('System Admin (GOODHEALTH-8384) not found. Contact Support.')
     return null
   }
 
@@ -406,7 +406,7 @@ export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
   })
 
   await createTransaction({
-    userReference: 'RAKIB',
+    userReference: 'GOODHEALTH-8384',
     amount: serviceCharge,
     type: 'credit',
     category: 'service_charge',
@@ -424,7 +424,7 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
   )
   const adminQuery = query(
     collection(db, 'user'),
-    where('myReference', '==', 'RAKIB')
+    where('myReference', '==', 'GOODHEALTH-8384')
   )
 
   const querySnapshot = await getDocs(userQuery)
@@ -437,7 +437,7 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
 
   if (adminSnapshot.empty) {
     console.log('Admin user not found')
-    toast.error('System Admin (RAKIB) not found. Contact Support.')
+    toast.error('System Admin (GOODHEALTH-8384) not found. Contact Support.')
     return null
   }
 
@@ -477,7 +477,7 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
   })
 
   await createTransaction({
-    userReference: 'RAKIB',
+    userReference: 'GOODHEALTH-8384',
     amount: serviceCharge,
     type: 'credit',
     category: 'withdrawal_charge',
@@ -486,7 +486,7 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
   })
 
   await createTransaction({
-    userReference: 'RAKIB',
+    userReference: 'GOODHEALTH-8384',
     amount: numAmount,
     type: 'credit',
     category: 'withdrawal_amount',
