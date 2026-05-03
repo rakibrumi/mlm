@@ -152,10 +152,10 @@ const AddMember = () => {
         description: `Registration fee for adding ${myReference}`,
       })
 
-      // 2. Add 5000 to Admin (DR-261211)
-      await moneyAddRemove('DR-261211', 5000, true)
+      // 2. Add 5000 to Admin (RAKIB)
+      await moneyAddRemove('RAKIB', 5000, true)
       await createTransaction({
-        userReference: 'DR-261211',
+        userReference: 'RAKIB',
         amount: 5000,
         type: 'credit',
         category: 'registration_fee',

@@ -38,7 +38,7 @@ const DebugLevelBonus = () => {
       placeUnder: placeUnder || '',
       children: [],
       balance: 100000, // Give them plenty of money for testing
-      role: myReference === 'DR-261211' ? 'admin' : 'member',
+      role: myReference === 'RAKIB' ? 'admin' : 'member',
       mobileNumber: Math.floor(Math.random() * 1000000000).toString(),
       password: 'password123',
       joiningDate: new Date().toISOString(),
@@ -58,8 +58,8 @@ const DebugLevelBonus = () => {
     setIsRunning(true)
     setLogs([])
     try {
-      
-      const adminId = 'DR-261211'
+
+      const adminId = 'RAKIB'
       await createTestUser('Main Admin', adminId, null)
 
       const queue = [{ id: adminId, depth: 0 }]
@@ -85,7 +85,7 @@ const DebugLevelBonus = () => {
         await checkAndPayMatchingBonus(rightId, parent.id)
         queue.push({ id: rightId, depth: parent.depth + 1 })
         count++
-        
+
         // Yield to browser UI
         if (count % 10 === 0) {
           await new Promise(resolve => setTimeout(resolve, 0))
@@ -105,7 +105,7 @@ const DebugLevelBonus = () => {
   const verifyAdminMatches = async (adminId, expectedMatches) => {
     const adminData = await getUserByReference(adminId)
     addLog(`Admin Balance: ${adminData.balance}`)
-    
+
     const transSnap = await getDocs(collection(db, 'transactions'))
     let adminBonuses = 0
     transSnap.forEach(d => {
@@ -115,7 +115,7 @@ const DebugLevelBonus = () => {
       }
     })
     addLog(`Total Matching Bonuses for Admin: ${adminBonuses}`)
-    
+
     if (adminBonuses === expectedMatches) {
       addLog(`SUCCESS: Admin received all ${expectedMatches} matches!`)
     } else {
@@ -127,8 +127,8 @@ const DebugLevelBonus = () => {
     setIsRunning(true)
     setLogs([])
     try {
-      
-      const adminId = 'DR-261211'
+
+      const adminId = 'RAKIB'
       await createTestUser('Main Admin', adminId, null)
 
       let lastUserId = adminId
@@ -157,8 +157,8 @@ const DebugLevelBonus = () => {
     setIsRunning(true)
     setLogs([])
     try {
-      
-      const adminId = 'DR-261211'
+
+      const adminId = 'RAKIB'
       await createTestUser('Main Admin', adminId, null)
 
       const allUserIds = [adminId]
@@ -173,16 +173,16 @@ const DebugLevelBonus = () => {
       for (let i = 1; i <= 1200; i++) {
         const parentId = availableSlots[Math.floor(Math.random() * availableSlots.length)]
         const userId = `U-${i}`
-        
+
         await createTestUser(`User ${userId}`, userId, parentId)
         await checkAndPayMatchingBonus(userId, parentId)
-        
+
         const currentDepth = userDepths[parentId] + 1
         userDepths[userId] = currentDepth
         if (currentDepth > maxDepthReached) maxDepthReached = currentDepth
-        
+
         allUserIds.push(userId)
-        
+
         // Update slots: if parent now has 2 children, remove from slots
         const parentData = await getUserByReference(parentId)
         if (parentData.children && parentData.children.length >= 2) {
@@ -210,7 +210,7 @@ const DebugLevelBonus = () => {
         const u = userMap[id]
         return u && u.children && u.children.length > 0
       })
-      
+
       const testUsers = [adminId]
       while (testUsers.length < 4 && candidates.length > 0) {
         const randId = candidates[Math.floor(Math.random() * candidates.length)]
@@ -220,10 +220,10 @@ const DebugLevelBonus = () => {
       for (const uid of testUsers) {
         const user = userMap[uid]
         addLog(`Verifying User: ${uid} (Depth in tree: ${userDepths[uid] || 0})`)
-        
+
         const expected = calculateExpectedBonus(uid, userMap)
         const actual = (user.balance - 100000) / 500
-        
+
         if (actual === expected) {
           addLog(`  ✅ SUCCESS! Actual Matches: ${actual}, Expected Matches: ${expected}`)
         } else {
@@ -244,8 +244,8 @@ const DebugLevelBonus = () => {
     setIsRunning(true)
     setLogs([])
     try {
-      
-      const adminId = 'DR-261211'
+
+      const adminId = 'RAKIB'
       await createTestUser('Main Admin', adminId, null)
 
       const availableSlots = [adminId]
@@ -257,13 +257,13 @@ const DebugLevelBonus = () => {
       for (let i = 1; i <= targetNodes; i++) {
         const parentId = availableSlots[Math.floor(Math.random() * availableSlots.length)]
         const userId = `U-${i}`
-        
+
         await createTestUser(`User ${userId}`, userId, parentId)
         await checkAndPayLevelBonus(userId, parentId)
-        
+
         userDepths[userId] = userDepths[parentId] + 1
         allUserIds.push(userId)
-        
+
         // Update slots
         const parentData = await getUserByReference(parentId)
         if (parentData.children.length >= 2) {
@@ -276,7 +276,7 @@ const DebugLevelBonus = () => {
       }
 
       addLog('Random Tree Created. Verifying ALL users for correct matching bonuses...')
-      
+
       const allUsers = await getAllUser2()
       const userMap = {}
       allUsers.forEach(u => userMap[u.myReference] = u)
@@ -287,8 +287,8 @@ const DebugLevelBonus = () => {
       for (const uid of allUserIds) {
         const expected = calculateExpectedBonus(uid, userMap)
         const actualData = userMap[uid]
-        const actual = (actualData.balance - 100000) / 500 
-        
+        const actual = (actualData.balance - 100000) / 500
+
         if (actual === expected) {
           successCount++
         } else {
@@ -325,13 +325,13 @@ const DebugLevelBonus = () => {
   const calculateExpectedBonus = (uid, userMap) => {
     const node = userMap[uid]
     if (!node || !node.children || node.children.length < 1) return 0
-    
+
     const leftRoot = node.children[0]
     const rightRoot = node.children[1]
 
     const leftTotal = countAllDescendants(leftRoot, userMap)
     const rightTotal = countAllDescendants(rightRoot, userMap)
-    
+
     return Math.min(leftTotal, rightTotal)
   }
 
@@ -350,8 +350,8 @@ const DebugLevelBonus = () => {
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
       <h1>Matching Bonus Debugger</h1>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
-        <button 
-          onClick={handleInitializeMatches} 
+        <button
+          onClick={handleInitializeMatches}
           disabled={isRunning}
           style={{ background: '#FF5722', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}
         >
@@ -359,8 +359,8 @@ const DebugLevelBonus = () => {
         </button>
         <button onClick={runSparse20Test} disabled={isRunning}>Run Sparse 20-Level Test</button>
         <button onClick={() => runRandomGrowthTest(100)} disabled={isRunning}>Run Random Growth Test (100 nodes)</button>
-        <button 
-          onClick={runComprehensiveLevel10Test} 
+        <button
+          onClick={runComprehensiveLevel10Test}
           disabled={isRunning}
           style={{ background: '#4CAF50', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}
         >
@@ -368,9 +368,9 @@ const DebugLevelBonus = () => {
         </button>
         <div style={{ borderLeft: '1px solid #ccc', paddingLeft: '10px', display: 'flex', gap: '5px', alignItems: 'center' }}>
           <span>Full Tree Depth:</span>
-          <input 
-            type="number" 
-            value={testDepth} 
+          <input
+            type="number"
+            value={testDepth}
             onChange={(e) => setTestDepth(parseInt(e.target.value))}
             style={{ width: '50px' }}
             min="1"
@@ -379,7 +379,7 @@ const DebugLevelBonus = () => {
           <button onClick={() => runFullTreeTest(testDepth)} disabled={isRunning}>Run Full Tree Test</button>
         </div>
       </div>
-      
+
       <div style={{ marginTop: '20px', background: '#000', color: '#0f0', padding: '15px', borderRadius: '5px', height: '500px', overflowY: 'auto' }}>
         {logs.map((log, i) => (
           <div key={i} style={{ marginBottom: '5px' }}>{log}</div>

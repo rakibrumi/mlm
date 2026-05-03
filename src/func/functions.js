@@ -327,7 +327,7 @@ export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
   )
   const adminUserQuery = query(
     collection(db, 'user'),
-    where('myReference', '==', 'DR-261211')
+    where('myReference', '==', 'RAKIB')
   )
 
   const querySnapshot = await getDocs(userQuery)
@@ -346,7 +346,7 @@ export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
 
   if (adminQuerySnapshot.empty) {
     console.log('Admin user not found')
-    toast.error('System Admin (DR-261211) not found. Contact Support.')
+    toast.error('System Admin (RAKIB) not found. Contact Support.')
     return null
   }
 
@@ -406,7 +406,7 @@ export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
   })
 
   await createTransaction({
-    userReference: 'DR-261211',
+    userReference: 'RAKIB',
     amount: serviceCharge,
     type: 'credit',
     category: 'service_charge',
@@ -424,7 +424,7 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
   )
   const adminQuery = query(
     collection(db, 'user'),
-    where('myReference', '==', 'DR-261211')
+    where('myReference', '==', 'RAKIB')
   )
 
   const querySnapshot = await getDocs(userQuery)
@@ -437,7 +437,7 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
 
   if (adminSnapshot.empty) {
     console.log('Admin user not found')
-    toast.error('System Admin (DR-261211) not found. Contact Support.')
+    toast.error('System Admin (RAKIB) not found. Contact Support.')
     return null
   }
 
@@ -477,7 +477,7 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
   })
 
   await createTransaction({
-    userReference: 'DR-261211',
+    userReference: 'RAKIB',
     amount: serviceCharge,
     type: 'credit',
     category: 'withdrawal_charge',
@@ -486,7 +486,7 @@ export const withdrawMoney = async (ownReferenceId, amount) => {
   })
 
   await createTransaction({
-    userReference: 'DR-261211',
+    userReference: 'RAKIB',
     amount: numAmount,
     type: 'credit',
     category: 'withdrawal_amount',
@@ -525,28 +525,28 @@ export const checkAndPayMatchingBonus = async (newUserId, placeUnderId) => {
     while (currentId && userMap[currentId]) {
       const ancestor = userMap[currentId]
       const children = Array.isArray(ancestor.children) ? ancestor.children : []
-      
+
       if (children.length >= 1) {
         const leftChildId = children[0]
         const rightChildId = children[1]
-        
+
         // Total descendants on Left and Right sides
         const leftCount = countAllDescendants(leftChildId, userMap)
         const rightCount = countAllDescendants(rightChildId, userMap)
-        
+
         const currentMatches = Math.min(leftCount, rightCount)
         const paidMatches = ancestor.paidMatches || 0
-        
+
         if (currentMatches > paidMatches) {
           const newMatchesToPay = currentMatches - paidMatches
           const amountPerMatch = 500
           const totalAmount = newMatchesToPay * amountPerMatch
-          
+
           console.log(`MATCH FOUND! Paying ${totalAmount} to ${ancestor.myReference} for ${newMatchesToPay} new matches. Total matches: ${currentMatches}`)
-          
+
           // Pay the money
           await moneyAddRemove(ancestor.myReference, totalAmount, true)
-          
+
           // Update paidMatches in DB
           const userQuery = query(
             collection(db, 'user'),
@@ -583,7 +583,7 @@ export const checkAndPayMatchingBonus = async (newUserId, placeUnderId) => {
           }
         }
       }
-      
+
       currentId = ancestor.placeUnder
     }
   } catch (error) {
@@ -607,21 +607,21 @@ export const initializeAllUserMatches = async () => {
         const leftCount = countAllDescendants(children[0], userMap)
         const rightCount = countAllDescendants(children[1], userMap)
         const currentMatches = Math.min(leftCount, rightCount)
-        
+
         // Update in DB (Assuming doc ID is myReference as per addUser)
         const userRef = doc(db, 'user', user.myReference)
         const updates = { paidMatches: currentMatches }
-        
+
         // Also sync Rank during initialization if they already have 20 matches
         if (currentMatches >= 20) {
           updates.rank = 'Marketing Associate'
         }
-        
+
         await updateDoc(userRef, updates)
         count++
       }
     }
-    
+
     console.log(`Successfully initialized matches for ${count} users.`)
     return { success: true, count }
   } catch (error) {
@@ -674,14 +674,14 @@ export const getMonthlyBonusCandidates = async (monthStr) => {
 
       const leftTotal = countAllDescendants(children[0], userMap)
       const rightTotal = countAllDescendants(children[1], userMap)
-      
+
       const leftNew = countNewInMonth(children[0], userMap, monthStr)
       const rightNew = countNewInMonth(children[1], userMap, monthStr)
-      
+
       // Calculate how many NEW matches were created this month
       const currentMatching = Math.min(leftTotal, rightTotal)
       const previousMatching = Math.min(leftTotal - leftNew, rightTotal - rightNew)
-      
+
       const monthlyNewMatches = currentMatching - previousMatching
 
       // Condition: 15+ new matches AND must have been Marketing Associate before this month
@@ -693,7 +693,7 @@ export const getMonthlyBonusCandidates = async (monthStr) => {
           where('month', '==', monthStr)
         )
         const snap = await getDocs(q)
-        
+
         candidates.push({
           userId: user.myReference,
           name: user.name,
@@ -724,7 +724,7 @@ const countNewInMonth = (userId, userMap, monthStr) => {
   if (!userId || !userMap[userId]) return 0
   let count = 0
   const node = userMap[userId]
-  
+
   if (node.joiningDate && node.joiningDate.startsWith(monthStr)) {
     count = 1
   }
@@ -749,7 +749,7 @@ export const payMonthlyBonus = async (userId, monthStr) => {
 
     // Pay 5000
     await moneyAddRemove(userId, 5000, true)
-    
+
     // Create Transaction
     await createTransaction({
       userReference: userId,

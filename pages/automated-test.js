@@ -71,7 +71,7 @@ const AutomatedTest = () => {
         setLogs([])
         try {
             await clearDB()
-            const adminId = 'DR-261211'
+            const adminId = 'RAKIB'
             addLog('Creating Admin User...')
             await addUser({
                 name: 'System Admin',
@@ -89,7 +89,7 @@ const AutomatedTest = () => {
             // SCENARIO 1: Achieve Rank in Month 1 (May 2024)
             const month1 = '2024-05'
             addLog(`--- Month 1: Building Tree for Rank (Target: 20/20) ---`)
-            
+
             // Build Left Side (20 users)
             let lastLeft = adminId
             for (let i = 1; i <= 20; i++) {
@@ -116,7 +116,7 @@ const AutomatedTest = () => {
             // SCENARIO 2: Imbalance & Monthly Bonus in Month 2 (June 2024)
             const month2 = '2024-06'
             addLog(`--- Month 2: Imbalance & Monthly Bonus Test ---`)
-            
+
             // Add extra 10 users to Right to create imbalance (Total R = 30, L = 20)
             for (let i = 21; i <= 30; i++) {
                 lastRight = await createMember(`R${i}`, adminId, lastRight, `${month2}-01`)
@@ -129,11 +129,11 @@ const AutomatedTest = () => {
                 lastLeft = await createMember(`L${i}`, adminId, lastLeft, `${month2}-05`)
             }
             addLog('Added 15 users to Left. Current State: L=35, R=30. New matches: 10.')
-            
+
             addLog('Checking Monthly Bonus Candidates for June...')
             const candidates = await getMonthlyBonusCandidates(month2)
             const isEligible = candidates.find(c => c.userId === adminId)
-            
+
             if (isEligible) {
                 addLog(`❌ FAILURE: User eligible with only 10 matches. (Logic Error)`)
             } else {
@@ -173,13 +173,13 @@ const AutomatedTest = () => {
             <Typography variant="h4" gutterBottom>Comprehensive System Test</Typography>
             <Paper sx={{ p: 3, mb: 3 }}>
                 <Typography variant="body1" color="error" sx={{ mb: 2 }}>
-                    WARNING: This will CLEAR the current database ({db.app.options.projectId}). 
+                    WARNING: This will CLEAR the current database ({db.app.options.projectId}).
                     Use ONLY for testing.
                 </Typography>
-                <Button 
-                    variant="contained" 
-                    color="primary" 
-                    onClick={runTests} 
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={runTests}
                     disabled={isRunning}
                     fullWidth
                 >
