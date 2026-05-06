@@ -11,6 +11,8 @@ const WithdrawPopup = ({ setOpen }) => {
     setInput({ ...input, [e.target.name]: e.target.value })
   }
 
+  const [loading, setLoading] = React.useState(false)
+
   const user =
     typeof window !== 'undefined'
       ? window.localStorage.getItem('earth_user')
@@ -22,35 +24,56 @@ const WithdrawPopup = ({ setOpen }) => {
       return toast.error('You need to login first')
     }
 
-    // Fetch fresh user data to get accurate balance
-    const dbUser = await getUserByReference(parsedUser.myReference)
-    if (!dbUser) {
-      return toast.error('User data not found')
-    }
+    if (loading) return
+    setLoading(true)
 
-    const amount = Number(input.amount)
-    const balance = Number(dbUser.balance)
-    const maxWithdraw = Math.floor(balance / 1.05)
+    try {
+      // Fetch fresh user data to get accurate balance
+      const dbUser = await getUserByReference(parsedUser.myReference)
+      if (!dbUser) {
+        setLoading(false)
+        return toast.error('User data not found')
+      }
 
-    if (amount > maxWithdraw) {
-      return toast.error(`You can withdraw max ${maxWithdraw} amount`)
-    }
-    if (amount < 0) {
-      return toast.error('You cannot withdraw negative amount')
-    }
-    if (amount < 300) {
-      return toast.error('You cannot withdraw less than 300')
-    }
-    if (!amount) {
-      return toast.error('Please input amount')
-    }
+      const amount = Number(input.amount)
+      const serviceCharge = (5 / 100) * amount
+      const totalNeeded = amount + serviceCharge
+      const currentBalance = dbUser?.balance || 0
 
-    const send = await withdrawMoney(parsedUser.myReference, amount)
-    if (send) {
-      toast.success('Money Withdraw successfully')
-      window.location.reload()
-    } else {
-      toast.error('Transaction Failed. Check console for details or try again.')
+      if (currentBalance < totalNeeded) {
+        setLoading(false)
+        return toast.error(
+          `Insufficient balance. You need ${totalNeeded} (including 5% charge)`
+        )
+      }
+
+      if (amount < 0) {
+        setLoading(false)
+        return toast.error('You cannot withdraw negative amount')
+      }
+      if (amount < 300) {
+        setLoading(false)
+        return toast.error('You cannot withdraw less than 300')
+      }
+      if (!amount) {
+        setLoading(false)
+        return toast.error('Please input amount')
+      }
+
+      const send = await withdrawMoney(parsedUser.myReference, amount)
+      if (send) {
+        toast.success('Money Withdraw successfully')
+        window.location.reload()
+      } else {
+        toast.error(
+          'Transaction Failed. Check console for details or try again.'
+        )
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('An error occurred. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -86,11 +109,12 @@ const WithdrawPopup = ({ setOpen }) => {
             <Button
               fullWidth
               size="large"
+              disabled={loading}
               onClick={handleWithdraw}
               variant="contained"
               sx={{ mt: 2, px: 4 }}
             >
-              Withdraw Money
+              {loading ? 'Processing...' : 'Withdraw Money'}
             </Button>
           </ButtonAnimate>
         </div>
