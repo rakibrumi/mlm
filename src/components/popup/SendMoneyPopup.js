@@ -2,7 +2,7 @@ import React from 'react'
 import ClearIcon from '@mui/icons-material/Clear'
 import { Button, TextField, Typography } from '@mui/material'
 import { ButtonAnimate } from '../animate'
-import { sendMoney } from '@/func/functions'
+import { sendMoney, getUserByReference } from '@/func/functions'
 import toast from 'react-hot-toast'
 
 const SendMoneyPopup = ({ setOpen }) => {
