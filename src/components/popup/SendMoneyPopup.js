@@ -11,6 +11,8 @@ const SendMoneyPopup = ({ setOpen }) => {
     setInput({ ...input, [e.target.name]: e.target.value })
   }
 
+  const [loading, setLoading] = React.useState(false)
+
   const user =
     typeof window !== 'undefined'
       ? window.localStorage.getItem('earth_user')
@@ -21,33 +23,61 @@ const SendMoneyPopup = ({ setOpen }) => {
     if (!parsedUser) {
       return toast.error('You need to login first')
     }
-    if (parsedUser.myReference === input.sendTo) {
-      return toast.error('You cannot send money to yourself')
-    }
-    const amount = Number(input.amount)
-    if (parsedUser.balance < amount) {
-      return toast.error('You do not have enough balance')
-    }
-    if (amount < 0) {
-      return toast.error('You cannot send negative amount')
-    }
-    if (amount < 300) {
-      return toast.error('You cannot send less than 300')
-    }
-    if (!input.sendTo || !amount) {
-      return toast.error('Please fill all the fields')
-    }
+    if (loading) return
+    setLoading(true)
 
-    const result = await sendMoney(
-      parsedUser.myReference,
-      input.sendTo,
-      amount
-    )
-    if (result && result.success) {
-      toast.success('Money sent successfully')
-      window.location.reload()
-    } else {
-      toast.error(result?.error || 'Something went wrong')
+    try {
+      // Fetch latest user data to ensure balance is correct
+      const latestUserData = await getUserByReference(parsedUser.myReference)
+      if (!latestUserData) {
+        setLoading(false)
+        return toast.error('User data not found. Please login again.')
+      }
+
+      if (latestUserData.myReference === input.sendTo) {
+        setLoading(false)
+        return toast.error('You cannot send money to yourself')
+      }
+
+      const amount = Number(input.amount)
+      const serviceCharge = (5 / 100) * amount
+      const totalNeeded = amount + serviceCharge
+      const currentBalance = latestUserData?.balance || 0
+
+      if (currentBalance < totalNeeded) {
+        setLoading(false)
+        return toast.error(`Insufficient balance. You need ${totalNeeded} (including 5% charge)`)
+      }
+
+      if (amount < 0) {
+        setLoading(false)
+        return toast.error('You cannot send negative amount')
+      }
+      if (amount < 300) {
+        setLoading(false)
+        return toast.error('You cannot send less than 300')
+      }
+      if (!input.sendTo || !amount) {
+        setLoading(false)
+        return toast.error('Please fill all the fields')
+      }
+
+      const result = await sendMoney(
+        latestUserData.myReference,
+        input.sendTo,
+        amount
+      )
+      if (result && result.success) {
+        toast.success('Money sent successfully')
+        window.location.reload()
+      } else {
+        toast.error(result?.error || 'Something went wrong')
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('An error occurred. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -92,13 +122,14 @@ const SendMoneyPopup = ({ setOpen }) => {
 
           <ButtonAnimate>
             <Button
+              disabled={loading}
               onClick={handleSendMoney}
               fullWidth
               size="large"
               variant="contained"
               sx={{ mt: 2, px: 5 }}
             >
-              Send Money
+              {loading ? 'Processing...' : 'Send Money'}
             </Button>
           </ButtonAnimate>
         </div>

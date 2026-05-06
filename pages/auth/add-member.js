@@ -109,32 +109,42 @@ const AddMember = () => {
   }, [router])
 
   const handleAddMember = async () => {
-    if (currentUser?.balance < 5000) {
-      toast.error('You do not have enough balance to add a member (Required: 5000)')
-      return
-    }
-
-    // First check if the selected under user has two children or not. If 2 then return
-    if (!input.placeUnder) {
-      toast.error('Please select a user to place under')
-      return
-    }
+    if (isSpinner) return
     setIsSpinner(true)
-    const myReference = await handleMakeReferance(input.name)
-    const data = {
-      ...input,
-      dob: formatDate(dob),
-      myReference,
-      balance: 0,
-      joiningDate: new Date().toISOString(),
-    }
 
-    const placeUnderUser = await getUserByReference(input.placeUnder)
-    if (placeUnderUser.children.length >= 2) {
-      toast.error('This user already has 2 referrals. Please select another')
-      setIsSpinner(false)
-      return
-    }
+    try {
+      // Fetch latest user data to ensure balance is correct
+      const latestUserData = await getUserByReference(currentUser.myReference)
+      const currentBalance = latestUserData?.balance || 0
+
+      if (!latestUserData || currentBalance < 5000) {
+        toast.error('You do not have enough balance to add a member (Required: 5000)')
+        setIsSpinner(false)
+        return
+      }
+
+      // First check if the selected under user has two children or not. If 2 then return
+      if (!input.placeUnder) {
+        toast.error('Please select a user to place under')
+        setIsSpinner(false)
+        return
+      }
+
+      const myReference = await handleMakeReferance(input.name)
+      const data = {
+        ...input,
+        dob: formatDate(dob),
+        myReference,
+        balance: 0,
+        joiningDate: new Date().toISOString(),
+      }
+
+      const placeUnderUser = await getUserByReference(input.placeUnder)
+      if (placeUnderUser.children.length >= 2) {
+        toast.error('This user already has 2 referrals. Please select another')
+        setIsSpinner(false)
+        return
+      }
 
     const success = await addUser(data)
     // const update = await updateUser(input.referenceId, myReference)
@@ -217,7 +227,12 @@ const AddMember = () => {
         },
       })
     }
+  } catch (error) {
+    console.error(error)
+    toast.error('An error occurred. Please try again.')
+    setIsSpinner(false)
   }
+}
 
   const formik = useFormik({
     enableReinitialize: true,
@@ -453,8 +468,9 @@ const AddMember = () => {
                   variant="contained"
                   sx={{ mt: 3 }}
                   onClick={handleAddMember}
+                  disabled={isSpinner}
                 >
-                  Register
+                  {isSpinner ? 'Processing...' : 'Register'}
                 </Button>
               </CardStyle>
             </ContentStyle>

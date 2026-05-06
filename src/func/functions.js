@@ -370,8 +370,9 @@ export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
   // Check if 5% of the amount is less than the user's balance
   const numAmount = Number(amount)
   const serviceCharge = (5 / 100) * numAmount
+  const currentBalance = userData.balance || 0
 
-  if (userData.balance < numAmount + serviceCharge) {
+  if (currentBalance < numAmount + serviceCharge) {
     console.log('User does not have enough balance')
     return { success: false, error: 'Insufficient balance (including 5% charge)' }
   }
