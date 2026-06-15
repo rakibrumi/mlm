@@ -23,6 +23,11 @@ export default function GlobalStyles() {
         body: {
           width: '100%',
           height: '100%',
+          backgroundColor: theme.palette.background.default,
+          backgroundImage: theme.palette.mode === 'dark'
+            ? 'radial-gradient(circle at 85% 15%, rgba(0, 178, 255, 0.15), transparent 45%), radial-gradient(circle at 15% 85%, rgba(51, 102, 255, 0.08), transparent 50%)'
+            : 'none',
+          backgroundAttachment: 'fixed',
         },
         '#__next': {
           width: '100%',
@@ -68,6 +73,10 @@ export default function GlobalStyles() {
         '.blur-up.lazyloaded ': {
           WebkitFilter: 'blur(0)',
           filter: 'blur(0)',
+        },
+        '.rd3t-link': {
+          stroke: '#00B2FF !important',
+          strokeWidth: '2px !important',
         },
       }}
     />

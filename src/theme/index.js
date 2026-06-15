@@ -21,7 +21,7 @@ ThemeConfig.propTypes = {
 
 export default function ThemeConfig({ children }) {
   const { themeMode, themeDirection } = useSettings();
-  const isLight = themeMode === 'light';
+  const isLight = false; // Forced to false for premium dark theme
 
   const themeOptions = useMemo(
     () => ({

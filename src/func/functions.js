@@ -20,6 +20,9 @@ import firebase from 'firebase/app'
 import 'firebase/firestore'
 import toast from 'react-hot-toast'
 
+const API_BASE_URL = 'https://goodhealth-backend.onrender.com'
+
+
 export const createTransaction = async data => {
   try {
     await addDoc(collection(db, 'transactions'), {
@@ -34,34 +37,12 @@ export const createTransaction = async data => {
 
 export const getTransactions = async (userReference) => {
   try {
-    // Try with sorting first (requires index)
-    try {
-      const q = query(
-        collection(db, 'transactions'),
-        where('userReference', '==', userReference),
-        orderBy('date', 'desc')
-      )
-      const querySnapshot = await getDocs(q)
-      const transactions = []
-      querySnapshot.forEach((doc) => {
-        transactions.push({ id: doc.id, ...doc.data() })
-      })
-      return transactions
-    } catch (indexError) {
-      console.warn('Index missing or query failed, falling back to unsorted query', indexError)
-      // Fallback: Query without sorting
-      const q = query(
-        collection(db, 'transactions'),
-        where('userReference', '==', userReference)
-      )
-      const querySnapshot = await getDocs(q)
-      const transactions = []
-      querySnapshot.forEach((doc) => {
-        transactions.push({ id: doc.id, ...doc.data() })
-      })
-      // Sort in memory if needed, or just return unsorted for now
-      return transactions.sort((a, b) => new Date(b.date) - new Date(a.date))
+    const response = await fetch(`${API_BASE_URL}/api/users/${userReference}/transactions`)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
+    const transactions = await response.json()
+    return transactions
   } catch (error) {
     console.error('Error fetching transactions:', error)
     return []
@@ -101,44 +82,102 @@ export const handleMakeReferance = async name => {
   return uniqueId
 }
 
-export const addUser = async data => {
+export const addUser = async (data, creatorId) => {
   try {
-    await setDoc(doc(db, 'user', data.myReference), data)
+    const response = await fetch(`${API_BASE_URL}/api/users?creatorId=${creatorId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.detail || 'Failed to add user')
+    }
+
     return true
   } catch (error) {
-    return error
-    // console.log(error);
+    console.error('Error adding user:', error)
+    toast.error(error.message)
+    return false
   }
 }
 
 export const updatePassword = async (dob, phone, newPassword) => {
-  // first check the dob is correct or not. means get the data by the phone number and check the dob is correct or not
   try {
-    const userQuery = query(
-      collection(db, 'user'),
-      where('mobileNumber', '==', phone)
-    )
-    const querySnapshot = await getDocs(userQuery)
+    const response = await fetch(`${API_BASE_URL}/api/users/update-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        dob,
+        phone: String(phone),
+        newPassword,
+      }),
+    })
 
-    if (querySnapshot.empty) {
-      console.log('User not found')
-      return null
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.detail || 'Failed to update password')
     }
-
-    const userDoc = querySnapshot.docs[0]
-    const userData = userDoc.data()
-
-    if (userData.dob !== dob) {
-      console.log('Date of birth is incorrect')
-      return null
-    }
-
-    const userRef = doc(db, 'user', userDoc.id)
-    await updateDoc(userRef, { password: newPassword })
 
     return true
   } catch (error) {
-    return error
+    console.error('Error updating password:', error)
+    return false
+  }
+}
+
+export const sendOTP = async (emailAddress, newPassword) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/forget-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        emailAddress,
+        newPassword,
+      }),
+    })
+
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.detail || 'Failed to send OTP')
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending OTP:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+export const verifyOTP = async (emailAddress, otp) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        emailAddress,
+        otp,
+      }),
+    })
+
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.detail || 'Failed to verify OTP')
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error verifying OTP:', error)
+    return { success: false, error: error.message }
   }
 }
 
@@ -173,33 +212,19 @@ export const updateUser = async (referenceId, newUser) => {
 
 export const updateUserProfile = async (referenceId, newData) => {
   try {
-    const userQuery = query(
-      collection(db, 'user'),
-      where('myReference', '==', referenceId)
-    )
-    const querySnapshot = await getDocs(userQuery)
+    const response = await fetch(`${API_BASE_URL}/api/users/${referenceId}/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newData),
+    })
 
-    if (querySnapshot.empty) {
-      console.log('User not found')
-      return { success: false, error: 'User not found' }
+    if (!response.ok) {
+      const err = await response.json()
+      return { success: false, error: err.detail || 'Failed to update profile' }
     }
 
-    const userDoc = querySnapshot.docs[0]
-    const userRef = doc(db, 'user', userDoc.id)
-
-    // Only allow updating specific fields
-    const { name, mobileNumber, avatarUrl, dob, father_name, mother_name, presentAddress, password } = newData
-    const updates = {}
-    if (name) updates.name = name
-    if (mobileNumber) updates.mobileNumber = mobileNumber
-    if (avatarUrl) updates.avatarUrl = avatarUrl
-    if (dob) updates.dob = dob
-    if (father_name) updates.father_name = father_name
-    if (mother_name) updates.mother_name = mother_name
-    if (presentAddress) updates.presentAddress = presentAddress
-    if (password) updates.password = password
-
-    await updateDoc(userRef, updates)
     return { success: true }
   } catch (error) {
     console.error('Error updating profile:', error)
@@ -208,39 +233,42 @@ export const updateUserProfile = async (referenceId, newData) => {
 }
 
 export const getAllUser = async setUsers => {
-  const querySnapshot = await getDocs(collection(db, 'user'))
-  setUsers([])
-  querySnapshot.forEach(doc => {
-    const data = doc.data()
-    setUsers(oldArray => [...oldArray, data])
-  })
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users`)
+    const data = await response.json()
+    setUsers(data)
+  } catch (error) {
+    console.error('Error fetching users:', error)
+  }
 }
 
 export const getAllUser2 = async () => {
-  const querySnapshot = await getDocs(collection(db, 'user'))
-  const userData = []
-  querySnapshot.forEach(doc => {
-    const data = doc.data()
-    userData.push(data)
-  })
-  return userData
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users`)
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error in getAllUser2:', error)
+    return []
+  }
 }
 
 export const getUserByReference = async referenceId => {
-  const userQuery = query(
-    collection(db, 'user'),
-    where('myReference', '==', referenceId)
-  )
-  const querySnapshot = await getDocs(userQuery)
-
-  if (querySnapshot.empty) {
-    console.log('User not found')
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/${referenceId}`)
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log('User not found')
+        return null
+      }
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const userData = await response.json()
+    return userData
+  } catch (error) {
+    console.error('Error fetching user by reference:', error)
     return null
   }
-
-  const userDoc = querySnapshot.docs[0]
-  const userData = userDoc.data()
-  return userData
 }
 
 export const giveMoneyWhileRegistration = async (referenceId, amount) => {
@@ -317,200 +345,81 @@ export const moneyAddRemove = async (referenceId, amount, inc) => {
 }
 
 export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
-  const userQuery = query(
-    collection(db, 'user'),
-    where('myReference', '==', ownReferenceId)
-  )
-  const remoteUserQuery = query(
-    collection(db, 'user'),
-    where('myReference', '==', remoteReferenceId)
-  )
-  const adminUserQuery = query(
-    collection(db, 'user'),
-    where('myReference', '==', 'GOODHEALTH-8384')
-  )
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/send-money`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        senderId: ownReferenceId,
+        receiverId: remoteReferenceId,
+        amount: Number(amount),
+      }),
+    })
 
-  const querySnapshot = await getDocs(userQuery)
-  const remoteQuerySnapshot = await getDocs(remoteUserQuery)
-  const adminQuerySnapshot = await getDocs(adminUserQuery)
+    if (!response.ok) {
+      const err = await response.json()
+      return { success: false, error: err.detail || 'Transfer failed' }
+    }
 
-  if (querySnapshot.empty) {
-    console.log('User not found')
-    return { success: false, error: `User (Sender) ${ownReferenceId} not found` }
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending money:', error)
+    return { success: false, error: error.message }
   }
-
-  if (remoteQuerySnapshot.empty) {
-    console.log('Remote user not found')
-    return { success: false, error: `Receiver ${remoteReferenceId} not found` }
-  }
-
-  if (adminQuerySnapshot.empty) {
-    console.log('Admin user not found')
-    toast.error('System Admin (GOODHEALTH-8384) not found. Contact Support.')
-    return null
-  }
-
-  const userDoc = querySnapshot.docs[0]
-  const remoteUserDoc = remoteQuerySnapshot.docs[0]
-  const adminDoc = adminQuerySnapshot.docs[0]
-
-  const userData = userDoc.data()
-  const remoteUserData = remoteUserDoc.data()
-  const adminData = adminDoc.data()
-
-  const userRef = doc(db, 'user', userDoc.id)
-  const remoteUserRef = doc(db, 'user', remoteUserDoc.id)
-  const adminRef = doc(db, 'user', adminDoc.id)
-
-  if (userData.myReference === remoteUserData.myReference) {
-    return { success: false, error: 'Cannot send money to yourself' }
-  }
-
-  // Check if 5% of the amount is less than the user's balance
-  // Check if 5% of the amount is less than the user's balance
-  const numAmount = Number(amount)
-  const serviceCharge = (5 / 100) * numAmount
-  const currentBalance = userData.balance || 0
-
-  if (currentBalance < numAmount + serviceCharge) {
-    console.log('User does not have enough balance')
-    return { success: false, error: 'Insufficient balance (including 5% charge)' }
-  }
-
-  await updateDoc(userRef, {
-    balance: increment(-(numAmount + serviceCharge)),
-  })
-  await updateDoc(remoteUserRef, {
-    balance: increment(numAmount),
-  })
-  await updateDoc(adminRef, {
-    balance: increment(serviceCharge),
-  })
-
-  // Create transactions for sender, receiver, and admin
-  await createTransaction({
-    userReference: ownReferenceId,
-    amount: numAmount,
-    type: 'debit',
-    category: 'send_money',
-    relatedUser: remoteReferenceId,
-    description: `Sent money to ${remoteReferenceId}`,
-  })
-
-  await createTransaction({
-    userReference: remoteReferenceId,
-    amount: numAmount,
-    type: 'credit',
-    category: 'receive_money',
-    relatedUser: ownReferenceId,
-    description: `Received money from ${ownReferenceId}`,
-  })
-
-  await createTransaction({
-    userReference: 'GOODHEALTH-8384',
-    amount: serviceCharge,
-    type: 'credit',
-    category: 'service_charge',
-    relatedUser: ownReferenceId,
-    description: `Service charge for transfer from ${ownReferenceId}`,
-  })
-
-  return { success: true }
 }
 
 export const withdrawMoney = async (ownReferenceId, amount) => {
-  const userQuery = query(
-    collection(db, 'user'),
-    where('myReference', '==', ownReferenceId)
-  )
-  const adminQuery = query(
-    collection(db, 'user'),
-    where('myReference', '==', 'GOODHEALTH-8384')
-  )
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/withdraw-money`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: ownReferenceId,
+        amount: Number(amount),
+      }),
+    })
 
-  const querySnapshot = await getDocs(userQuery)
-  const adminSnapshot = await getDocs(adminQuery)
+    if (!response.ok) {
+      const err = await response.json()
+      return false
+    }
 
-  if (querySnapshot.empty) {
-    console.log('User not found')
-    return null
-  }
-
-  if (adminSnapshot.empty) {
-    console.log('Admin user not found')
-    toast.error('System Admin (GOODHEALTH-8384) not found. Contact Support.')
-    return null
-  }
-
-  const userDoc = querySnapshot.docs[0]
-  const adminDoc = adminSnapshot.docs[0]
-
-  const userData = userDoc.data()
-  const adminData = adminDoc.data()
-
-  const numAmount = Number(amount)
-  const serviceCharge = (5 / 100) * numAmount
-
-  const userRef = doc(db, 'user', userDoc.id)
-  const adminRef = doc(db, 'user', adminDoc.id)
-
-  if (userData.balance < numAmount + serviceCharge) {
-    console.log('User does not have enough balance')
+    return true
+  } catch (error) {
+    console.error('Error withdrawing money:', error)
     return false
   }
-
-  await updateDoc(userRef, {
-    balance: increment(-(numAmount + serviceCharge)),
-  })
-
-  await updateDoc(adminRef, {
-    balance: increment(numAmount + serviceCharge),
-  })
-
-  // Create transactions for user and admin
-  await createTransaction({
-    userReference: ownReferenceId,
-    amount: numAmount,
-    type: 'debit',
-    category: 'withdrawal',
-    relatedUser: 'Admin',
-    description: `Withdrew money`,
-  })
-
-  await createTransaction({
-    userReference: 'GOODHEALTH-8384',
-    amount: serviceCharge,
-    type: 'credit',
-    category: 'withdrawal_charge',
-    relatedUser: ownReferenceId,
-    description: `Withdrawal charge from ${ownReferenceId}`,
-  })
-
-  await createTransaction({
-    userReference: 'GOODHEALTH-8384',
-    amount: numAmount,
-    type: 'credit',
-    category: 'withdrawal_amount',
-    relatedUser: ownReferenceId,
-    description: `Withdrawal amount from ${ownReferenceId}`,
-  })
-
-  return true
 }
 
 export const login = async inputData => {
-  const querySnapshot = await getDocs(collection(db, 'user'))
-  let user = null
-  querySnapshot.forEach(doc => {
-    const data = doc.data()
-    if (
-      inputData.mobileNumber === data.mobileNumber &&
-      inputData.password === data.password
-    ) {
-      user = data
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        mobileNumber: String(inputData.mobileNumber),
+        password: String(inputData.password),
+      }),
+    })
+
+    if (!response.ok) {
+      const errData = await response.json()
+      console.error('Login failed:', errData.detail)
+      return null
     }
-  })
-  return user
+
+    const user = await response.json()
+    return user
+  } catch (error) {
+    console.error('Error in login call:', error)
+    return null
+  }
 }
 
 export const checkAndPayMatchingBonus = async (newUserId, placeUnderId) => {
@@ -658,115 +567,35 @@ const countDescendantsAtLevel = (
 }
 export const getMonthlyBonusCandidates = async (monthStr) => {
   try {
-    const allUsers = await getAllUser2()
-    const userMap = {}
-    allUsers.forEach(user => {
-      userMap[user.myReference] = user
-    })
-
-    const candidates = []
-
-    for (const user of allUsers) {
-      const children = Array.isArray(user.children) ? user.children : []
-      if (children.length < 2) continue
-
-      // Rank check: Must be Marketing Associate
-      if (user.rank !== 'Marketing Associate') continue
-
-      const leftTotal = countAllDescendants(children[0], userMap)
-      const rightTotal = countAllDescendants(children[1], userMap)
-
-      const leftNew = countNewInMonth(children[0], userMap, monthStr)
-      const rightNew = countNewInMonth(children[1], userMap, monthStr)
-
-      // Calculate how many NEW matches were created this month
-      const currentMatching = Math.min(leftTotal, rightTotal)
-      const previousMatching = Math.min(leftTotal - leftNew, rightTotal - rightNew)
-
-      const monthlyNewMatches = currentMatching - previousMatching
-
-      // Condition: 15+ new matches AND must have been Marketing Associate before this month
-      if (monthlyNewMatches >= 15 && previousMatching >= 20) {
-        // Check if already paid for this month
-        const q = query(
-          collection(db, 'monthlyBonuses'),
-          where('userId', '==', user.myReference),
-          where('month', '==', monthStr)
-        )
-        const snap = await getDocs(q)
-
-        candidates.push({
-          userId: user.myReference,
-          name: user.name,
-          newMatches: monthlyNewMatches,
-          alreadyPaid: !snap.empty
-        })
-      }
+    const response = await fetch(`${API_BASE_URL}/api/admin/monthly-bonus/candidates?month=${monthStr}`)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
-    return candidates
+    const data = await response.json()
+    return data
   } catch (error) {
     console.error('Error getting monthly bonus candidates:', error)
     return []
   }
 }
 
-const countAllDescendants = (userId, userMap) => {
-  if (!userId || !userMap[userId]) return 0
-  let count = 1
-  const node = userMap[userId]
-  const children = Array.isArray(node.children) ? node.children : []
-  for (const childId of children) {
-    count += countAllDescendants(childId, userMap)
-  }
-  return count
-}
-
-const countNewInMonth = (userId, userMap, monthStr) => {
-  if (!userId || !userMap[userId]) return 0
-  let count = 0
-  const node = userMap[userId]
-
-  if (node.joiningDate && node.joiningDate.startsWith(monthStr)) {
-    count = 1
-  }
-
-  const children = Array.isArray(node.children) ? node.children : []
-  for (const childId of children) {
-    count += countNewInMonth(childId, userMap, monthStr)
-  }
-  return count
-}
-
 export const payMonthlyBonus = async (userId, monthStr) => {
   try {
-    // Re-verify not already paid
-    const q = query(
-      collection(db, 'monthlyBonuses'),
-      where('userId', '==', userId),
-      where('month', '==', monthStr)
-    )
-    const snap = await getDocs(q)
-    if (!snap.empty) return { success: false, error: 'Already paid' }
-
-    // Pay 5000
-    await moneyAddRemove(userId, 5000, true)
-
-    // Create Transaction
-    await createTransaction({
-      userReference: userId,
-      amount: 5000,
-      type: 'credit',
-      category: 'monthly_bonus',
-      description: `Monthly performance bonus for ${monthStr} (15+ new matches)`,
+    const response = await fetch(`${API_BASE_URL}/api/admin/monthly-bonus/pay`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        month: monthStr,
+      }),
     })
 
-    // Record History
-    await addDoc(collection(db, 'monthlyBonuses'), {
-      userId,
-      month: monthStr,
-      amount: 5000,
-      date: new Date().toISOString()
-    })
+    if (!response.ok) {
+      const err = await response.json()
+      return { success: false, error: err.detail || 'Failed to pay monthly bonus' }
+    }
 
     return { success: true }
   } catch (error) {
@@ -777,16 +606,12 @@ export const payMonthlyBonus = async (userId, monthStr) => {
 
 export const getMonthlyBonusHistory = async () => {
   try {
-    const q = query(
-      collection(db, 'monthlyBonuses'),
-      orderBy('date', 'desc')
-    )
-    const snap = await getDocs(q)
-    const history = []
-    snap.forEach(doc => {
-      history.push({ id: doc.id, ...doc.data() })
-    })
-    return history
+    const response = await fetch(`${API_BASE_URL}/api/admin/monthly-bonus/history`)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    return data
   } catch (error) {
     console.error('Error getting monthly bonus history:', error)
     return []

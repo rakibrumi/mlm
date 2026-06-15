@@ -29,11 +29,11 @@ const GREY = {
 };
 
 const PRIMARY = {
-  lighter: '#C8FACD',
-  light: '#5BE584',
-  main: '#00AB55',
-  dark: '#007B55',
-  darker: '#005249',
+  lighter: '#D1FFFC',
+  light: '#76F2FF',
+  main: '#00B2FF', // Glowing Cyan/Blue matching zenvix
+  dark: '#0088CC',
+  darker: '#005C8A',
   contrastText: '#fff',
 };
 const SECONDARY = {
@@ -103,14 +103,14 @@ const COMMON = {
   error: { ...ERROR },
   grey: GREY,
   gradients: GRADIENTS,
-  divider: GREY[500_24],
+  divider: alpha('#506080', 0.24),
   chart: CHART_COLORS,
   action: {
-    hover: GREY[500_8],
-    selected: GREY[500_16],
-    disabled: GREY[500_80],
-    disabledBackground: GREY[500_24],
-    focus: GREY[500_24],
+    hover: alpha('#919EAB', 0.08),
+    selected: alpha('#919EAB', 0.16),
+    disabled: alpha('#919EAB', 0.8),
+    disabledBackground: alpha('#919EAB', 0.24),
+    focus: alpha('#919EAB', 0.24),
     hoverOpacity: 0.08,
     disabledOpacity: 0.48,
   },
@@ -125,9 +125,9 @@ const palette = {
   },
   dark: {
     ...COMMON,
-    text: { primary: '#fff', secondary: GREY[500], disabled: GREY[600] },
-    background: { paper: GREY[800], default: GREY[900], neutral: GREY[500_16] },
-    action: { active: GREY[500], ...COMMON.action },
+    text: { primary: '#fff', secondary: '#94a3b8', disabled: GREY[600] },
+    background: { paper: '#091124', default: '#08000C', neutral: '#0c1833' },
+    action: { active: '#94a3b8', ...COMMON.action },
   },
 };
 

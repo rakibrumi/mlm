@@ -157,8 +157,8 @@ const renderNodeWithCustomEvents = ({ nodeDatum, toggleNode, handleClick }) => {
         />
       )}
       <text
-        fill="black"
-        strokeWidth="1"
+        fill="#fff"
+        stroke="none"
         x="60"
         fontSize={fontSize}
       // onClick={toggleNode}

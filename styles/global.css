@@ -27,14 +27,38 @@ a {
   align-items: center;
 }
 .popup_content {
-  background-color: #fff;
+  background-image: linear-gradient(to bottom, #0a162f 0%, #08000C 100%);
+  border: 1px solid rgba(0, 178, 255, 0.2);
   padding: 20px;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px 0 rgba(0, 178, 255, 0.15);
   width: 50%;
   max-height: 500px;
   overflow-y: auto;
-  color: #212b36;
+  color: #fff;
+}
+.popup_content input,
+.popup_content textarea {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+.popup_content .MuiOutlinedInput-root {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+.popup_content .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(0, 178, 255, 0.2) !important;
+}
+.popup_content .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(0, 178, 255, 0.45) !important;
+}
+.popup_content .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #00B2FF !important;
+}
+.popup_content .MuiInputLabel-root {
+  color: #94a3b8 !important;
+}
+.popup_content .MuiInputLabel-root.Mui-focused {
+  color: #00B2FF !important;
 }
 
 @media screen and (max-width: 768px) {

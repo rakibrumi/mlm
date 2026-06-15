@@ -172,9 +172,9 @@ export default function AccountPopover({ user: userProp }) {
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               Right Team: <strong>{loadingCounts ? '...' : teamCounts.right}</strong>
             </Typography>
-            {teamCounts.left >= 20 && teamCounts.right >= 20 && (
+            {user.rank && user.rank !== 'Member' && (
               <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                Rank: Marketing Associates
+                Rank: {user.rank}
               </Typography>
             )}
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>

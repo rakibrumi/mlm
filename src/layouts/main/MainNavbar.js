@@ -78,13 +78,19 @@ export default function MainNavbar() {
     fetchUserAndRedirect()
   }, [])
 
+  const showBackground = !isHome || isOffset;
+
   return (
-    <AppBar sx={{ boxShadow: 0, bgcolor: 'transparent' }}>
+    <AppBar sx={{ boxShadow: 0, bgcolor: 'transparent', backgroundImage: 'none' }}>
       <ToolbarStyle
         disableGutters
         sx={{
-          ...(isOffset && {
-            bgcolor: 'background.default',
+          transition: 'all 0.3s ease',
+          ...(showBackground && {
+            bgcolor: 'rgba(8, 0, 12, 0.8)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            borderBottom: '1px solid rgba(0, 178, 255, 0.1)',
             height: { md: APP_BAR_DESKTOP - 16 },
           }),
         }}

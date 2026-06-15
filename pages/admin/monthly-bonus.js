@@ -15,6 +15,7 @@ import {
   Alert,
   TextField,
   Divider,
+  Chip,
 } from '@mui/material'
 import MainLayout from '@/layouts/main'
 import Page from '@/components/Page'
@@ -93,13 +94,13 @@ export default function MonthlyBonusAdmin() {
     }
   }, [month, role])
 
-  const handlePay = async (userId) => {
-    if (!window.confirm('Are you sure you want to pay 5000 bonus to this user?')) return
+  const handlePay = async (userId, salary, rank) => {
+    if (!window.confirm(`Are you sure you want to pay ৳${salary} bonus to ${userId} (${rank})?`)) return
 
     try {
       const res = await payMonthlyBonus(userId, month)
       if (res.success) {
-        toast.success('Bonus paid successfully')
+        toast.success(`Bonus ৳${salary} paid successfully`)
         fetchCandidates() // Refresh list
         fetchHistory() // Refresh history
       } else {
@@ -164,8 +165,13 @@ export default function MonthlyBonusAdmin() {
                   <TableRow>
                     <TableCell>Name</TableCell>
                     <TableCell>User ID</TableCell>
+                    <TableCell>Rank</TableCell>
                     <TableCell align="center">Left New</TableCell>
+                    <TableCell align="center">Left Carry</TableCell>
                     <TableCell align="center">Right New</TableCell>
+                    <TableCell align="center">Right Carry</TableCell>
+                    <TableCell align="center">Matches</TableCell>
+                    <TableCell align="center">Target</TableCell>
                     <TableCell align="center">Status</TableCell>
                     <TableCell align="right">Action</TableCell>
                   </TableRow>
@@ -175,13 +181,26 @@ export default function MonthlyBonusAdmin() {
                     <TableRow key={c.userId}>
                       <TableCell>{c.name}</TableCell>
                       <TableCell>{c.userId}</TableCell>
+                      <TableCell>
+                        <Chip label={c.rank} color="primary" size="small" variant="outlined" />
+                      </TableCell>
                       <TableCell align="center">{c.leftNew}</TableCell>
+                      <TableCell align="center" sx={{ color: c.leftCarryOver > 0 ? 'info.main' : 'text.secondary' }}>
+                        {c.leftCarryOver}
+                      </TableCell>
                       <TableCell align="center">{c.rightNew}</TableCell>
+                      <TableCell align="center" sx={{ color: c.rightCarryOver > 0 ? 'info.main' : 'text.secondary' }}>
+                        {c.rightCarryOver}
+                      </TableCell>
+                      <TableCell align="center">{c.newMatches}</TableCell>
+                      <TableCell align="center">{c.monthlyTarget}</TableCell>
                       <TableCell align="center">
                         {c.alreadyPaid ? (
                           <Typography sx={{ color: 'success.main', fontWeight: 'bold' }}>Paid</Typography>
+                        ) : c.eligible ? (
+                          <Typography sx={{ color: 'warning.main', fontWeight: 'bold' }}>Eligible</Typography>
                         ) : (
-                          <Typography sx={{ color: 'warning.main' }}>Pending</Typography>
+                          <Typography sx={{ color: 'text.secondary' }}>Not Eligible</Typography>
                         )}
                       </TableCell>
                       <TableCell align="right">
@@ -189,10 +208,10 @@ export default function MonthlyBonusAdmin() {
                           variant="contained"
                           color="success"
                           size="small"
-                          disabled={c.alreadyPaid}
-                          onClick={() => handlePay(c.userId)}
+                          disabled={c.alreadyPaid || !c.eligible}
+                          onClick={() => handlePay(c.userId, c.monthlySalary, c.rank)}
                         >
-                          {c.alreadyPaid ? 'Already Paid' : 'Pay 5000'}
+                          {c.alreadyPaid ? 'Already Paid' : `Pay ৳${c.monthlySalary}`}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -218,6 +237,7 @@ export default function MonthlyBonusAdmin() {
                   <TableRow>
                     <TableCell>Date Paid</TableCell>
                     <TableCell>User ID</TableCell>
+                    <TableCell>Rank</TableCell>
                     <TableCell>Bonus Month</TableCell>
                     <TableCell align="right">Amount</TableCell>
                   </TableRow>
@@ -227,6 +247,11 @@ export default function MonthlyBonusAdmin() {
                     <TableRow key={h.id}>
                       <TableCell>{new Date(h.date).toLocaleString()}</TableCell>
                       <TableCell>{h.userId}</TableCell>
+                      <TableCell>
+                        {h.rank ? (
+                          <Chip label={h.rank} color="primary" size="small" variant="outlined" />
+                        ) : '-'}
+                      </TableCell>
                       <TableCell>{h.month}</TableCell>
                       <TableCell align="right">৳ {h.amount}</TableCell>
                     </TableRow>

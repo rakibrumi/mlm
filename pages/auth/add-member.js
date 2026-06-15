@@ -42,7 +42,9 @@ const ContentStyle = styled('div')(({ theme }) => ({
 
 const CardStyle = styled('div')(({ theme }) => ({
   padding: theme.spacing(4),
-  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+  backgroundImage: 'linear-gradient(to bottom, #0a162f 0%, #08000C 100%)',
+  border: '1px solid rgba(0, 178, 255, 0.15)',
+  boxShadow: '0 8px 32px 0 rgba(0, 178, 255, 0.1)',
   borderRadius: '8px',
 }))
 
@@ -146,93 +148,55 @@ const AddMember = () => {
         return
       }
 
-    const success = await addUser(data)
-    // const update = await updateUser(input.referenceId, myReference)
-    const update = await updateUser(input.placeUnder, myReference) // It will add the new user to the selected user's children array
+      const success = await addUser(data, currentUser.myReference)
 
-    if (success) {
-      // 1. Deduct 5000 from Current User (The one performing the add)
-      await moneyAddRemove(currentUser.myReference, 5000, false)
-      await createTransaction({
-        userReference: currentUser.myReference,
-        amount: 5000,
-        type: 'debit',
-        category: 'registration_fee',
-        relatedUser: myReference,
-        description: `Registration fee for adding ${myReference}`,
-      })
+      if (success) {
+        setIsSpinner(false)
+        Swal.fire({
+          title: `Member added successfully. Your reference id is ${myReference}`,
+          width: 600,
+          padding: '1rem',
+          color: '#716add',
+          background: '#fff url(/images/second_bg_popup.png)',
+          backdrop: `
+            rgba(0,0,123,0.4)
+            url("https://sweetalert2.github.io/images/nyan-cat.gif")
+            left top
+            no-repeat
+          `,
+          zIndex: 9999,
+          customClass: {
+            title: 'my-swal-title',
+          },
+        })
 
-      // 2. Add 5000 to Admin (GOODHEALTH-8384)
-      await moneyAddRemove('GOODHEALTH-8384', 5000, true)
-      await createTransaction({
-        userReference: 'GOODHEALTH-8384',
-        amount: 5000,
-        type: 'credit',
-        category: 'registration_fee',
-        relatedUser: myReference,
-        description: `Registration fee from ${currentUser.myReference}`,
-      })
-
-      // 3. Add 500 to Referrer (input.referenceId)
-      await moneyAddRemove(input.referenceId, 500, true)
-      await createTransaction({
-        userReference: input.referenceId,
-        amount: 500,
-        type: 'credit',
-        category: 'referral_bonus',
-        relatedUser: myReference,
-        description: `Referral bonus for ${myReference}`,
-      })
-
-      // 4. Check and pay matching bonuses
-      await checkAndPayMatchingBonus(myReference, input.placeUnder)
-
+        window.location.reload()
+      } else {
+        setIsSpinner(false)
+        Swal.fire({
+          title: 'Something went wrong',
+          width: 600,
+          padding: '1rem',
+          color: '#716add',
+          background: '#fff url(/images/second_bg_popup.png)',
+          backdrop: `
+            rgba(0,0,123,0.4)
+            url("https://sweetalert2.github.io/images/nyan-cat.gif")
+            left top
+            no-repeat
+          `,
+          zIndex: 9999,
+          customClass: {
+            title: 'my-swal-title',
+          },
+        })
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('An error occurred. Please try again.')
       setIsSpinner(false)
-      Swal.fire({
-        title: `Member added successfully. Your reference id is ${myReference}`,
-        width: 600,
-        padding: '1rem',
-        color: '#716add',
-        background: '#fff url(/images/second_bg_popup.png)',
-        backdrop: `
-          rgba(0,0,123,0.4)
-          url("https://sweetalert2.github.io/images/nyan-cat.gif")
-          left top
-          no-repeat
-        `,
-        zIndex: 9999,
-        customClass: {
-          title: 'my-swal-title',
-        },
-      })
-
-      window.location.reload()
-    } else {
-      setIsSpinner(false)
-      Swal.fire({
-        title: 'Something went wrong',
-        width: 600,
-        padding: '1rem',
-        color: '#716add',
-        background: '#fff url(/images/second_bg_popup.png)',
-        backdrop: `
-          rgba(0,0,123,0.4)
-          url("https://sweetalert2.github.io/images/nyan-cat.gif")
-          left top
-          no-repeat
-        `,
-        zIndex: 9999,
-        customClass: {
-          title: 'my-swal-title',
-        },
-      })
     }
-  } catch (error) {
-    console.error(error)
-    toast.error('An error occurred. Please try again.')
-    setIsSpinner(false)
   }
-}
 
   const formik = useFormik({
     enableReinitialize: true,

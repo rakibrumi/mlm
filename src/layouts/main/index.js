@@ -18,7 +18,7 @@ export default function MainLayout({ children }) {
   return (
     <>
       <MainNavbar />
-      <div className="min-h-screen">{children}</div>
+      <Box sx={{ pt: { xs: 12, md: 16 }, minHeight: '100vh' }}>{children}</Box>
 
       <Box
         sx={{
