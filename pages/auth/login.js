@@ -10,7 +10,11 @@ import {
   Typography,
   Button,
   TextField,
+  IconButton,
+  InputAdornment,
 } from '@mui/material'
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import AuthLayout from '@/layouts/AuthLayout'
 import Page from '@/components/Page'
 import { MHidden } from '@/components/@material-extend'
@@ -57,6 +61,7 @@ const ContentStyle = styled('div')(({ theme }) => ({
 export default function Login() {
   const [input, setInput] = useState({})
   const [showPopup, setShowPopup] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -174,9 +179,23 @@ export default function Login() {
             label="Password"
             margin="normal"
             name="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             variant="outlined"
             onChange={handleChange}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={() => setShowPassword(!showPassword)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
 
           <Typography
