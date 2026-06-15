@@ -12,6 +12,7 @@ import fileUploader from '@/utils/fileUploader'
 const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
     const [input, setInput] = useState({
         name: '',
+        email: '',
         mobileNumber: '',
         myReference: '',
         avatarUrl: '',
@@ -29,6 +30,7 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
         if (currentUser) {
             setInput({
                 name: currentUser.name || '',
+                email: currentUser.email || currentUser.emailAddress || '',
                 mobileNumber: currentUser.mobileNumber || '',
                 myReference: currentUser.myReference || '',
                 avatarUrl: currentUser.avatarUrl || '',
@@ -77,6 +79,7 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
         setLoading(true)
         const result = await updateUserProfile(currentUser.myReference, {
             name: input.name,
+            email: input.email,
             mobileNumber: input.mobileNumber,
             avatarUrl: input.avatarUrl,
             dob: input.dob,
@@ -95,6 +98,7 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
                 const updatedUser = {
                     ...storedUser,
                     name: input.name,
+                    email: input.email,
                     mobileNumber: input.mobileNumber,
                     avatarUrl: input.avatarUrl,
                     dob: input.dob,
@@ -161,6 +165,16 @@ const UpdateProfilePopup = ({ open, setOpen, currentUser }) => {
                         onChange={handleChange}
                         variant="outlined"
                         disabled
+                        sx={{ mb: 2 }}
+                    />
+
+                    <TextField
+                        fullWidth
+                        label="Email"
+                        name="email"
+                        value={input.email}
+                        onChange={handleChange}
+                        variant="outlined"
                         sx={{ mb: 2 }}
                     />
 
