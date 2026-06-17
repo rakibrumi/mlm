@@ -59,7 +59,7 @@ const MyAccount = () => {
           typeof window !== 'undefined'
             ? window.localStorage.getItem('earth_user')
             : false
-        
+
         if (!user) {
           router.push('/auth/login')
           return
@@ -111,6 +111,15 @@ const MyAccount = () => {
               <Button
                 variant="contained"
                 color="primary"
+                onClick={() => router.push('/gallery')}
+              >
+                Gallery
+              </Button>
+            </ButtonAnimate>
+            <ButtonAnimate>
+              <Button
+                variant="contained"
+                color="primary"
                 onClick={() => router.push('/marketing-plan')}
               >
                 Marketing plan
@@ -139,25 +148,12 @@ const MyAccount = () => {
                     Monthly Bonus
                   </Button>
                 </ButtonAnimate>
+
                 <ButtonAnimate>
                   <Button
                     variant="contained"
                     color="primary"
-                    onClick={() => router.push('/old-transactions')}
-                  >
-                    Old Transactions
-                  </Button>
-                </ButtonAnimate>
-                <ButtonAnimate>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() =>
-                      window.open(
-                        'https://console.firebase.google.com/u/1/project/earthco-ecad3/firestore/databases/-default-/data',
-                        '_blank'
-                      )
-                    }
+                    onClick={() => router.push('/admin')}
                   >
                     Admin Panel
                   </Button>

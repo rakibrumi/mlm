@@ -21,6 +21,7 @@ import 'firebase/firestore'
 import toast from 'react-hot-toast'
 
 const API_BASE_URL = 'https://goodhealth-backend.onrender.com'
+// const API_BASE_URL = 'http://127.0.0.1:8000'
 
 
 export const createTransaction = async data => {
@@ -634,3 +635,136 @@ export const getOldTransactions = async () => {
     return []
   }
 }
+
+export const getAdminUsers = async (page = 1, limit = 10, search = '', role = '', rank = '') => {
+  try {
+    let url = `${API_BASE_URL}/api/admin/users?page=${page}&limit=${limit}`
+    if (search) url += `&search=${encodeURIComponent(search)}`
+    if (role) url += `&role=${encodeURIComponent(role)}`
+    if (rank) url += `&rank=${encodeURIComponent(rank)}`
+
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching admin users:', error)
+    return { users: [], total: 0, page: 1, pages: 1 }
+  }
+}
+
+export const deleteUser = async (referenceId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/${referenceId}`, {
+      method: 'DELETE',
+    })
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.detail || 'Failed to delete user')
+    }
+    toast.success('User deleted successfully')
+    return true
+  } catch (error) {
+    console.error('Error deleting user:', error)
+    toast.error(error.message)
+    return false
+  }
+}
+
+export const getAdminTransactions = async (page = 1, limit = 10, search = '') => {
+  try {
+    let url = `${API_BASE_URL}/api/admin/transactions?page=${page}&limit=${limit}`
+    if (search) url += `&search=${encodeURIComponent(search)}`
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching admin transactions:', error)
+    return { transactions: [], total: 0, page: 1, pages: 1 }
+  }
+}
+
+export const uploadImageToImgbb = async (file) => {
+  const apiKey = '0ca5c9cdb23add3ecfaff014d8e4ad9c'
+  const formData = new FormData()
+  formData.append('image', file)
+  
+  try {
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+      method: 'POST',
+      body: formData,
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Imgbb upload failed with status ${response.status}`)
+    }
+    
+    const resData = await response.json()
+    if (resData.success) {
+      return resData.data.url
+    } else {
+      throw new Error(resData.error?.message || 'Failed to upload to Imgbb')
+    }
+  } catch (error) {
+    console.error('Imgbb upload error:', error)
+    toast.error(`Image Upload Failed: ${error.message}`)
+    return null
+  }
+}
+
+export const saveGalleryItem = async (url, title) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/gallery`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url, title }),
+    })
+    if (!response.ok) {
+      throw new Error(`Failed to save gallery item: ${response.status}`)
+    }
+    const data = await response.json()
+    toast.success('Image saved to gallery')
+    return data
+  } catch (error) {
+    console.error('Save gallery item error:', error)
+    toast.error(error.message)
+    return null
+  }
+}
+
+export const getGalleryItems = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/gallery`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch gallery: ${response.status}`)
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('Fetch gallery error:', error)
+    return []
+  }
+}
+
+export const deleteGalleryItem = async (itemId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/gallery/${itemId}`, {
+      method: 'DELETE',
+    })
+    if (!response.ok) {
+      throw new Error(`Failed to delete gallery item: ${response.status}`)
+    }
+    toast.success('Image removed from gallery')
+    return true
+  } catch (error) {
+    console.error('Delete gallery item error:', error)
+    toast.error(error.message)
+    return false
+  }
+}
+
+
