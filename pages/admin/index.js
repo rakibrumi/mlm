@@ -28,6 +28,7 @@ import {
   IconButton,
   Chip,
   Tooltip,
+  Autocomplete,
 } from '@mui/material'
 import {
   People as PeopleIcon,
@@ -106,6 +107,7 @@ export default function AdminDashboard() {
   const [galleryLoading, setGalleryLoading] = useState(false)
   const [imageFile, setImageFile] = useState(null)
   const [imageTitle, setImageTitle] = useState('')
+  const [imageFolder, setImageFolder] = useState('General')
   const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   useEffect(() => {
@@ -189,10 +191,11 @@ export default function AdminDashboard() {
     try {
       const imageUrl = await uploadImageToImgbb(imageFile)
       if (imageUrl) {
-        const res = await saveGalleryItem(imageUrl, imageTitle)
+        const res = await saveGalleryItem(imageUrl, imageTitle, imageFolder || 'General')
         if (res) {
           setImageFile(null)
           setImageTitle('')
+          setImageFolder('General')
           const fileInput = document.getElementById('gallery-file-input')
           if (fileInput) fileInput.value = ''
           fetchGallery()
@@ -738,132 +741,172 @@ export default function AdminDashboard() {
                 </Paper>
               )}
 
-              {activeTab === 'gallery' && (
-                <Paper sx={{ p: 3, borderRadius: 2 }}>
-                  <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-                    Gallery Management
-                  </Typography>
+              {activeTab === 'gallery' && (() => {
+                const existingFolders = Array.from(
+                  new Set(galleryItems.map((item) => item.folder).filter(Boolean))
+                )
+                if (!existingFolders.includes('General')) {
+                  existingFolders.push('General')
+                }
 
-                  {/* Upload Image Form */}
-                  <Box
-                    component="form"
-                    onSubmit={handleGalleryUpload}
-                    sx={{
-                      p: 3,
-                      mb: 4,
-                      borderRadius: 1.5,
-                      bgcolor: 'action.hover',
-                      border: '1px dashed rgba(255,255,255,0.15)',
-                    }}
-                  >
-                    <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
-                      Upload New Image to Gallery
+                return (
+                  <Paper sx={{ p: 3, borderRadius: 2 }}>
+                    <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
+                      Gallery Management
                     </Typography>
-                    <Grid container spacing={2} alignItems="center">
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Image Title"
-                          variant="outlined"
-                          size="small"
-                          fullWidth
-                          value={imageTitle}
-                          onChange={(e) => setImageTitle(e.target.value)}
-                          placeholder="E.g. Seminar 2026"
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Button
-                            variant="contained"
-                            component="label"
-                            color="info"
-                            size="medium"
-                          >
-                            Choose File
-                            <input
-                              type="file"
-                              hidden
-                              id="gallery-file-input"
-                              accept="image/*"
-                              onChange={(e) => setImageFile(e.target.files[0])}
-                            />
-                          </Button>
-                          <Typography variant="body2" noWrap sx={{ maxWidth: 150 }}>
-                            {imageFile ? imageFile.name : 'No file chosen'}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Button
-                          type="submit"
-                          variant="contained"
-                          color="primary"
-                          disabled={isUploadingImage || !imageFile}
-                        >
-                          {isUploadingImage ? 'Uploading to imgbb...' : 'Upload Image'}
-                        </Button>
-                      </Grid>
-                    </Grid>
-                  </Box>
 
-                  {/* Gallery List */}
-                  {galleryLoading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', my: 10 }}>
-                      <CircularProgress />
-                    </Box>
-                  ) : galleryItems.length === 0 ? (
-                    <Alert severity="info">No images uploaded in the gallery yet.</Alert>
-                  ) : (
-                    <Grid container spacing={3}>
-                      {galleryItems.map((item) => (
-                        <Grid item xs={12} sm={6} md={4} key={item.id}>
-                          <Paper
+                    {/* Upload Image Form */}
+                    <Box
+                      component="form"
+                      onSubmit={handleGalleryUpload}
+                      sx={{
+                        p: 3,
+                        mb: 4,
+                        borderRadius: 1.5,
+                        bgcolor: 'action.hover',
+                        border: '1px dashed rgba(255,255,255,0.15)',
+                      }}
+                    >
+                      <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
+                        Upload New Image to Gallery
+                      </Typography>
+                      <Grid container spacing={2} alignItems="center">
+                        <Grid item xs={12} sm={4}>
+                          <TextField
+                            label="Image Title"
                             variant="outlined"
-                            sx={{
-                              p: 1.5,
-                              borderRadius: 1.5,
-                              height: '100%',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: 'space-between',
-                            }}
-                          >
-                            <Box>
-                              <Box
-                                component="img"
-                                src={item.url}
-                                alt={item.title || 'Gallery Image'}
-                                sx={{
-                                  width: '100%',
-                                  height: 180,
-                                  objectFit: 'cover',
-                                  borderRadius: 1,
-                                  mb: 1.5,
-                                }}
-                              />
-                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }} noWrap>
-                                {item.title || 'Untitled Image'}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                Uploaded: {new Date(item.date).toLocaleDateString()}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
-                              <IconButton
-                                color="error"
-                                onClick={() => handleDeleteGallery(item.id)}
-                                size="small"
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          </Paper>
+                            size="small"
+                            fullWidth
+                            value={imageTitle}
+                            onChange={(e) => setImageTitle(e.target.value)}
+                            placeholder="E.g. Seminar 2026"
+                          />
                         </Grid>
-                      ))}
-                    </Grid>
-                  )}
-                </Paper>
-              )}
+                        <Grid item xs={12} sm={4}>
+                          <Autocomplete
+                            freeSolo
+                            options={existingFolders}
+                            value={imageFolder}
+                            onChange={(event, newValue) => {
+                              setImageFolder(newValue || '')
+                            }}
+                            onInputChange={(event, newInputValue) => {
+                              setImageFolder(newInputValue)
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Folder Name"
+                                variant="outlined"
+                                size="small"
+                                placeholder="E.g. Seminars, Events"
+                                fullWidth
+                              />
+                            )}
+                          />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Button
+                              variant="contained"
+                              component="label"
+                              color="info"
+                              size="medium"
+                            >
+                              Choose File
+                              <input
+                                type="file"
+                                hidden
+                                id="gallery-file-input"
+                                accept="image/*"
+                                onChange={(e) => setImageFile(e.target.files[0])}
+                              />
+                            </Button>
+                            <Typography variant="body2" noWrap sx={{ maxWidth: 150 }}>
+                              {imageFile ? imageFile.name : 'No file chosen'}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Button
+                            type="submit"
+                            variant="contained"
+                            color="primary"
+                            disabled={isUploadingImage || !imageFile}
+                          >
+                            {isUploadingImage ? 'Uploading to imgbb...' : 'Upload Image'}
+                          </Button>
+                        </Grid>
+                      </Grid>
+                    </Box>
+
+                    {/* Gallery List */}
+                    {galleryLoading ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', my: 10 }}>
+                        <CircularProgress />
+                      </Box>
+                    ) : galleryItems.length === 0 ? (
+                      <Alert severity="info">No images uploaded in the gallery yet.</Alert>
+                    ) : (
+                      <Grid container spacing={3}>
+                        {galleryItems.map((item) => (
+                          <Grid item xs={12} sm={6} md={4} key={item.id}>
+                            <Paper
+                              variant="outlined"
+                              sx={{
+                                p: 1.5,
+                                borderRadius: 1.5,
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                              }}
+                            >
+                              <Box>
+                                <Box
+                                  component="img"
+                                  src={item.url}
+                                  alt={item.title || 'Gallery Image'}
+                                  sx={{
+                                    width: '100%',
+                                    height: 180,
+                                    objectFit: 'cover',
+                                    borderRadius: 1,
+                                    mb: 1.5,
+                                  }}
+                                />
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', maxWidth: '60%' }} noWrap>
+                                    {item.title || 'Untitled Image'}
+                                  </Typography>
+                                  <Chip
+                                    label={item.folder || 'General'}
+                                    size="small"
+                                    color="primary"
+                                    variant="outlined"
+                                  />
+                                </Box>
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  Uploaded: {new Date(item.date).toLocaleDateString()}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
+                                <IconButton
+                                  color="error"
+                                  onClick={() => handleDeleteGallery(item.id)}
+                                  size="small"
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    )}
+                  </Paper>
+                )
+              })()}
             </Grid>
           </Grid>
         </Container>
@@ -992,6 +1035,74 @@ export default function AdminDashboard() {
                 <MenuItem value="General Manager">General Manager</MenuItem>
                 <MenuItem value="Director">Director</MenuItem>
               </TextField>
+            </Grid>
+
+            {/* Read-Only System Details */}
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1.5 }} />
+              <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 'bold', mb: 1 }}>
+                System & Referral Details (Read-only)
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Referred By"
+                fullWidth
+                size="small"
+                value={selectedUser?.referenceId ? `${selectedUser.referrerName || 'User'} (${selectedUser.referenceId})` : 'System / Admin'}
+                InputProps={{ readOnly: true }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Referrer Mobile"
+                fullWidth
+                size="small"
+                value={selectedUser?.referenceMobile || 'N/A'}
+                InputProps={{ readOnly: true }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Placed Under Reference"
+                fullWidth
+                size="small"
+                value={selectedUser?.placeUnder || 'N/A'}
+                InputProps={{ readOnly: true }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Direct Placements (Children)"
+                fullWidth
+                size="small"
+                value={selectedUser?.children?.length > 0 ? selectedUser.children.join(', ') : 'None'}
+                InputProps={{ readOnly: true }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Paid Matches"
+                fullWidth
+                size="small"
+                value={selectedUser?.paidMatches || 0}
+                InputProps={{ readOnly: true }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Joining Date"
+                fullWidth
+                size="small"
+                value={selectedUser?.joiningDate ? new Date(selectedUser.joiningDate).toLocaleString() : 'N/A'}
+                InputProps={{ readOnly: true }}
+                disabled
+              />
             </Grid>
           </Grid>
         </DialogContent>

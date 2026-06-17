@@ -715,14 +715,14 @@ export const uploadImageToImgbb = async (file) => {
   }
 }
 
-export const saveGalleryItem = async (url, title) => {
+export const saveGalleryItem = async (url, title, folder) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/gallery`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url, title }),
+      body: JSON.stringify({ url, title, folder }),
     })
     if (!response.ok) {
       throw new Error(`Failed to save gallery item: ${response.status}`)

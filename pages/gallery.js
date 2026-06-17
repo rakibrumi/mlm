@@ -12,8 +12,11 @@ import {
   Dialog,
   IconButton,
   Alert,
+  Chip,
+  Button,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import MainLayout from '@/layouts/main'
 import Page from '@/components/Page'
 import { getGalleryItems } from '@/func/functions'
@@ -23,6 +26,7 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedImage, setSelectedImage] = useState(null)
+  const [selectedFolder, setSelectedFolder] = useState(null)
 
   useEffect(() => {
     const fetchGallery = async () => {
@@ -39,10 +43,22 @@ export default function GalleryPage() {
     fetchGallery()
   }, [])
 
-  // Filter items by search query
-  const filteredItems = items.filter((item) =>
-    (item.title || '').toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Group items by folder
+  const foldersMap = {}
+  items.forEach((item) => {
+    const folderName = item.folder || 'General'
+    if (!foldersMap[folderName]) {
+      foldersMap[folderName] = []
+    }
+    foldersMap[folderName].push(item)
+  })
+
+  const folderNames = Object.keys(foldersMap)
+
+  // Handle back to folder grid
+  const handleBack = () => {
+    setSelectedFolder(null)
+  }
 
   return (
     <MainLayout>
@@ -77,58 +93,186 @@ export default function GalleryPage() {
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 10 }}>
               <CircularProgress size={50} />
             </Box>
-          ) : filteredItems.length === 0 ? (
+          ) : items.length === 0 ? (
             <Alert severity="info" sx={{ mt: 2 }}>
               No images found in the gallery.
             </Alert>
-          ) : (
-            <Grid container spacing={3}>
-              {filteredItems.map((item) => (
-                <Grid item xs={12} sm={6} md={4} key={item.id}>
-                  <Card
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: (theme) => theme.customShadows?.z12 || 12,
-                      },
-                    }}
-                    onClick={() => setSelectedImage(item)}
-                  >
-                    <Box sx={{ position: 'relative', overflow: 'hidden' }}>
+          ) : searchQuery ? (
+            // Search View: search globally across all images
+            (() => {
+              const matchedItems = items.filter((item) =>
+                (item.title || '').toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              return (
+                <Box>
+                  <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
+                    Search Results
+                  </Typography>
+                  {matchedItems.length === 0 ? (
+                    <Alert severity="info">No images match your search query.</Alert>
+                  ) : (
+                    <Grid container spacing={3}>
+                      {matchedItems.map((item) => (
+                        <Grid item xs={12} sm={6} md={4} key={item.id}>
+                          <Card
+                            sx={{
+                              height: '100%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              cursor: 'pointer',
+                              borderRadius: 2.5,
+                              overflow: 'hidden',
+                              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                              transition: 'transform 0.2s, box-shadow 0.2s',
+                              '&:hover': {
+                                transform: 'translateY(-4px)',
+                                boxShadow: (theme) => theme.customShadows?.z12 || 12,
+                              },
+                            }}
+                            onClick={() => setSelectedImage(item)}
+                          >
+                            <CardMedia
+                              component="img"
+                              image={item.url}
+                              alt={item.title || 'Gallery Image'}
+                              sx={{ height: 240, objectFit: 'cover' }}
+                            />
+                            <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="h6" noWrap sx={{ fontWeight: 'bold', fontSize: '1.1rem', maxWidth: '60%' }}>
+                                  {item.title || 'Untitled Image'}
+                                </Typography>
+                                <Chip label={item.folder || 'General'} size="small" variant="outlined" color="primary" />
+                              </Box>
+                              <Typography variant="caption" color="text.secondary">
+                                {new Date(item.date).toLocaleDateString()}
+                              </Typography>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  )}
+                </Box>
+              )
+            })()
+          ) : selectedFolder ? (
+            // Folder Detail View: show images in the selected folder
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
+                <Button
+                  startIcon={<ArrowBackIcon />}
+                  variant="outlined"
+                  onClick={handleBack}
+                  sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+                >
+                  Back to Folders
+                </Button>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', textTransform: 'capitalize' }}>
+                  {selectedFolder}
+                </Typography>
+              </Box>
+              <Grid container spacing={3}>
+                {foldersMap[selectedFolder]?.map((item) => (
+                  <Grid item xs={12} sm={6} md={4} key={item.id}>
+                    <Card
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        cursor: 'pointer',
+                        borderRadius: 2.5,
+                        overflow: 'hidden',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: (theme) => theme.customShadows?.z12 || 12,
+                        },
+                      }}
+                      onClick={() => setSelectedImage(item)}
+                    >
                       <CardMedia
                         component="img"
                         image={item.url}
                         alt={item.title || 'Gallery Image'}
-                        sx={{
-                          height: 240,
-                          objectFit: 'cover',
-                          transition: 'transform 0.3s ease',
-                          '&:hover': {
-                            transform: 'scale(1.03)',
-                          },
-                        }}
+                        sx={{ height: 240, objectFit: 'cover' }}
                       />
-                    </Box>
-                    {item.title && (
                       <CardContent sx={{ flexGrow: 1, p: 2 }}>
-                        <Typography variant="h6" component="h2" noWrap sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
-                          {item.title}
+                        <Typography variant="h6" noWrap sx={{ fontWeight: 'bold', fontSize: '1.1rem', mb: 1 }}>
+                          {item.title || 'Untitled Image'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {new Date(item.date).toLocaleDateString()}
                         </Typography>
                       </CardContent>
-                    )}
-                  </Card>
-                </Grid>
-              ))}
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          ) : (
+            // Folder Grid View (Default)
+            <Grid container spacing={4}>
+              {folderNames.map((folderName) => {
+                const folderItems = foldersMap[folderName]
+                const coverImage = folderItems && folderItems.length > 0 ? folderItems[0].url : ''
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={folderName}>
+                    <Box
+                      onClick={() => setSelectedFolder(folderName)}
+                      sx={{
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s',
+                        '&:hover': {
+                          transform: 'scale(1.02)',
+                        },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: '100%',
+                          height: 220,
+                          borderRadius: 3,
+                          overflow: 'hidden',
+                          boxShadow: '0 4px 15px rgba(0,0,0,0.12)',
+                          bgcolor: 'action.hover',
+                        }}
+                      >
+                        {coverImage ? (
+                          <Box
+                            component="img"
+                            src={coverImage}
+                            alt={folderName}
+                            sx={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                          />
+                        ) : (
+                          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'text.secondary' }}>
+                            No Images
+                          </Box>
+                        )}
+                      </Box>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{
+                          mt: 1.5,
+                          fontWeight: 'bold',
+                          textAlign: 'left',
+                          fontSize: '1.05rem',
+                          color: 'text.primary',
+                          pl: 0.5,
+                        }}
+                      >
+                        {folderName}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                )
+              })}
             </Grid>
           )}
         </Container>
