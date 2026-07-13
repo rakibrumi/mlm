@@ -65,10 +65,14 @@ const BinaryTreeView = ({ allDataView }) => {
     }
 
     // Ensure the user has two children, either real children or blank nodes
-    const childrenCount = user.children.length
+    const validChildren = user.children
+      .map(childId => generateTreeData(childId))
+      .filter(Boolean)
+
+    const childrenCount = validChildren.length
     const blankNodesCount = Math.max(0, 2 - childrenCount)
     const children = [
-      ...user.children.map(childId => generateTreeData(childId)),
+      ...validChildren,
       ...Array.from({ length: blankNodesCount }, (_, index) => ({
         myReference: `blank-${userId}-${index}`,
         name: 'Blank',
@@ -115,16 +119,18 @@ const BinaryTreeView = ({ allDataView }) => {
 
   return (
     <div style={{ width: '100%', height: '500px', zIndex: 200 }}>
-      <Tree
-        data={treeData}
-        orientation="vertical"
-        translate={{ x: 300, y: 150 }}
-        separation={{ siblings: 2, nonSiblings: 3 }}
-        onClick={handleClick}
-        renderCustomNodeElement={rd3tProps =>
-          renderNodeWithCustomEvents({ ...rd3tProps, handleClick })
-        }
-      />
+      {treeData && (
+        <Tree
+          data={treeData}
+          orientation="vertical"
+          translate={{ x: 300, y: 150 }}
+          separation={{ siblings: 2, nonSiblings: 3 }}
+          onClick={handleClick}
+          renderCustomNodeElement={rd3tProps =>
+            renderNodeWithCustomEvents({ ...rd3tProps, handleClick })
+          }
+        />
+      )}
     </div>
   )
 }
