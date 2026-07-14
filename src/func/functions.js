@@ -345,7 +345,7 @@ export const moneyAddRemove = async (referenceId, amount, inc) => {
   return true
 }
 
-export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
+export const sendMoney = async (ownReferenceId, remoteReferenceId, amount, message) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/users/send-money`, {
       method: 'POST',
@@ -356,6 +356,7 @@ export const sendMoney = async (ownReferenceId, remoteReferenceId, amount) => {
         senderId: ownReferenceId,
         receiverId: remoteReferenceId,
         amount: Number(amount),
+        message: message || undefined,
       }),
     })
 

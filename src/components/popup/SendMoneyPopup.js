@@ -6,7 +6,7 @@ import { sendMoney, getUserByReference } from '@/func/functions'
 import toast from 'react-hot-toast'
 
 const SendMoneyPopup = ({ setOpen }) => {
-  const [input, setInput] = React.useState({ sendTo: '', amount: '' })
+  const [input, setInput] = React.useState({ sendTo: '', amount: '', message: '' })
   const handleChange = e => {
     setInput({ ...input, [e.target.name]: e.target.value })
   }
@@ -18,6 +18,18 @@ const SendMoneyPopup = ({ setOpen }) => {
       ? window.localStorage.getItem('earth_user')
       : false
   const parsedUser = user ? JSON.parse(user) : false
+
+  const [dbUser, setDbUser] = React.useState(null)
+
+  React.useEffect(() => {
+    if (parsedUser && parsedUser.myReference) {
+      getUserByReference(parsedUser.myReference).then(data => {
+        if (data) {
+          setDbUser(data)
+        }
+      })
+    }
+  }, [])
 
   const handleSendMoney = async () => {
     if (!parsedUser) {
@@ -65,7 +77,8 @@ const SendMoneyPopup = ({ setOpen }) => {
       const result = await sendMoney(
         latestUserData.myReference,
         input.sendTo,
-        amount
+        amount,
+        input.message
       )
       if (result && result.success) {
         toast.success('Money sent successfully')
@@ -119,6 +132,18 @@ const SendMoneyPopup = ({ setOpen }) => {
             sx={{ mt: 1 }}
             onChange={handleChange}
           />
+
+          {((parsedUser && parsedUser.role === 'admin') || (dbUser && dbUser.role === 'admin')) && (
+            <TextField
+              fullWidth
+              label="Message"
+              name="message"
+              type="text"
+              variant="outlined"
+              sx={{ mt: 1 }}
+              onChange={handleChange}
+            />
+          )}
 
           <ButtonAnimate>
             <Button
