@@ -133,7 +133,7 @@ const SendMoneyPopup = ({ setOpen }) => {
             onChange={handleChange}
           />
 
-          {((parsedUser && parsedUser.role === 'admin') || (dbUser && dbUser.role === 'admin')) && (
+          {/* {((parsedUser && parsedUser.role === 'admin') || (dbUser && dbUser.role === 'admin')) && (
             <TextField
               fullWidth
               label="Message"
@@ -143,7 +143,7 @@ const SendMoneyPopup = ({ setOpen }) => {
               sx={{ mt: 1 }}
               onChange={handleChange}
             />
-          )}
+          )} */}
 
           <ButtonAnimate>
             <Button
