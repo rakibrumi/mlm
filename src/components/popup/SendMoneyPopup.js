@@ -145,7 +145,11 @@ const SendMoneyPopup = ({ setOpen }) => {
             />
           )} */}
 
-          <h1>Coming</h1>
+          {((parsedUser && parsedUser.role === 'admin') || (dbUser && dbUser.role === 'admin')) && (
+            <h1>Coming</h1>
+          )}
+
+
 
           <ButtonAnimate>
             <Button
