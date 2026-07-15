@@ -93,7 +93,7 @@ const ForgetPassPopup = ({ setShowPopup }) => {
     }
 
     setSending(true)
-    const res = await sendOTP(input.emailAddress, input.password)
+    const res = await sendOTP(input.emailAddress)
     setSending(false)
 
     if (res.success) {
@@ -108,7 +108,7 @@ const ForgetPassPopup = ({ setShowPopup }) => {
   const handleResendOTP = async () => {
     if (timer > 0) return
     setSending(true)
-    const res = await sendOTP(input.emailAddress, input.password)
+    const res = await sendOTP(input.emailAddress)
     setSending(false)
 
     if (res.success) {
@@ -127,7 +127,7 @@ const ForgetPassPopup = ({ setShowPopup }) => {
     }
 
     setVerifying(true)
-    const res = await verifyOTP(input.emailAddress, otp)
+    const res = await verifyOTP(input.emailAddress, otp, input.password)
     setVerifying(false)
 
     if (res.success) {

@@ -132,7 +132,7 @@ export const updatePassword = async (dob, phone, newPassword) => {
   }
 }
 
-export const sendOTP = async (emailAddress, newPassword) => {
+export const sendOTP = async (emailAddress) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/forget-password`, {
       method: 'POST',
@@ -141,7 +141,6 @@ export const sendOTP = async (emailAddress, newPassword) => {
       },
       body: JSON.stringify({
         emailAddress,
-        newPassword,
       }),
     })
 
@@ -157,7 +156,7 @@ export const sendOTP = async (emailAddress, newPassword) => {
   }
 }
 
-export const verifyOTP = async (emailAddress, otp) => {
+export const verifyOTP = async (emailAddress, otp, newPassword) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
       method: 'POST',
@@ -167,6 +166,7 @@ export const verifyOTP = async (emailAddress, otp) => {
       body: JSON.stringify({
         emailAddress,
         otp,
+        newPassword,
       }),
     })
 
