@@ -20,7 +20,7 @@ import firebase from 'firebase/app'
 import 'firebase/firestore'
 import toast from 'react-hot-toast'
 
-const API_BASE_URL = 'https://goodhealth-backend.onrender.com'
+const API_BASE_URL = 'https://api.goodhealth.sbs'
 // const API_BASE_URL = 'http://127.0.0.1:8000'
 
 
@@ -692,17 +692,17 @@ export const uploadImageToImgbb = async (file) => {
   const apiKey = '0ca5c9cdb23add3ecfaff014d8e4ad9c'
   const formData = new FormData()
   formData.append('image', file)
-  
+
   try {
     const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
       method: 'POST',
       body: formData,
     })
-    
+
     if (!response.ok) {
       throw new Error(`Imgbb upload failed with status ${response.status}`)
     }
-    
+
     const resData = await response.json()
     if (resData.success) {
       return resData.data.url
