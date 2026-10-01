@@ -119,8 +119,8 @@ const AddMember = () => {
       const latestUserData = await getUserByReference(currentUser.myReference)
       const currentBalance = latestUserData?.balance || 0
 
-      if (!latestUserData || currentBalance < 5000) {
-        toast.error('You do not have enough balance to add a member (Required: 5000)')
+      if (!latestUserData || currentBalance < 5500) {
+        toast.error('You do not have enough balance to add a member (Required: 5500)')
         setIsSpinner(false)
         return
       }

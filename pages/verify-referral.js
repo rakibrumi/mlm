@@ -85,7 +85,7 @@ const VerifyReferral = () => {
                     myReference: id,
                     referenceId: refId, // Who referred them
                     placeUnder: underId, // Parent in tree
-                    balance: 5000, // Enough to join
+                    balance: 5500, // Enough to join
                     children: [],
                     role: 'member',
                     mobileNumber: `${Math.floor(Math.random() * 10000000000)}`,
